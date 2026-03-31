@@ -207,6 +207,16 @@
   .complete-btn:active { background:rgba(39,111,55,0.16); }
   .complete-btn.done { opacity:0.55; cursor:default; }
 
+  /* VIDEO MODAL */
+  .video-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.82); z-index:300; align-items:center; justify-content:center; padding:1rem; }
+  .video-modal.active { display:flex; }
+  .video-modal-inner { width:100%; max-width:480px; background:#000; border-radius:12px; overflow:hidden; position:relative; }
+  .video-modal-close { position:absolute; top:0.5rem; right:0.6rem; background:rgba(0,0,0,0.6); border:none; color:#fff; font-size:1.2rem; width:36px; height:36px; border-radius:50%; cursor:pointer; z-index:10; display:flex; align-items:center; justify-content:center; line-height:1; }
+  .video-modal-title { font-size:0.7rem; letter-spacing:0.08em; text-transform:uppercase; color:rgba(255,255,255,0.6); padding:0.6rem 0.75rem 0.4rem; }
+  .video-modal iframe { width:100%; aspect-ratio:16/9; display:block; border:none; }
+  .ex-video-btn { background:none; border:none; cursor:pointer; padding:0 0 0 0.4rem; color:var(--gold); font-size:0.7rem; vertical-align:middle; opacity:0.75; flex-shrink:0; }
+  .ex-video-btn:active { opacity:1; }
+
   /* PHASE SELECTOR */
   .phase-selector { display:flex; gap:0; background:var(--bg); border:1.5px solid var(--border-strong); border-radius:10px; overflow:hidden; margin-bottom:1rem; }
   .phase-btn { flex:1; background:none; border:none; font-family:inherit; font-size:0.72rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); padding:0.65rem 0.25rem; cursor:pointer; transition:all 0.15s; }
@@ -271,6 +281,14 @@
   <div>
     <button class="session-btn" onclick="toggleSession()" id="sessionToggle">Start</button>
     <button class="session-btn end" onclick="endSession()" style="margin-left:0.3rem">End & Save</button>
+  </div>
+</div>
+
+<div class="video-modal" id="videoModal" onclick="closeVideo(event)">
+  <div class="video-modal-inner">
+    <button class="video-modal-close" onclick="closeVideo()">✕</button>
+    <div class="video-modal-title" id="videoModalTitle"></div>
+    <iframe id="videoFrame" allowfullscreen allow="autoplay"></iframe>
   </div>
 </div>
 
@@ -629,8 +647,9 @@ function renderDay(dayId) {
 
         const hasData = today && today.some(s => s && (s.weight || s.reps || s.done));
         html += `<div class="ex-card${allDone ? ' all-done' : ''}${hasData ? ' expanded' : ''}">`;
+        const hasVideo = !!EXERCISE_VIDEOS[ex.name];
         html += `<div class="ex-card-top" onclick="toggleCard(this)"><div class="ex-left">`;
-        html += `<div class="ex-name">${ex.name}${ex.ss ? `<span class="ss-badge">${ex.ss}</span>` : ''}</div>`;
+        html += `<div class="ex-name">${ex.name}${ex.ss ? `<span class="ss-badge">${ex.ss}</span>` : ''}${hasVideo ? `<button class="ex-video-btn" onclick="event.stopPropagation();showVideo('${ex.name.replace(/'/g,"\\'")}')">▶</button>` : ''}</div>`;
         html += `<div class="ex-note">${ex.note}</div>`;
         if (last) {
           const lastSets = last.sets.filter(s => s && s.done);
@@ -1257,6 +1276,51 @@ loadPhase(); // sync phase from Neon on startup
 // ===== PWA =====
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ===== EXERCISE VIDEOS =====
+const EXERCISE_VIDEOS = {
+  // Day 1 — Push
+  'Flat Bench Press':              { id: 'hWbUlkb5Ms4', title: 'Bench Press — Perfect Technique' },
+  'Incline DB Press':              { id: '8fXfwG4ftaQ', title: 'Incline DB Press — Perfect Form' },
+  'Cable Fly':                     { id: 'I-Ue34qLxc4', title: 'Cable Chest Fly — Perfect Form' },
+  'Overhead Press':                { id: '4LBVP2Oe7fg', title: 'Barbell Overhead Press — Perfect Form' },
+  'Lateral Raise':                 { id: 'Kl3LEzQ5Zqs', title: 'Lateral Raise — Perfect Form' },
+  'Tricep Pushdown':               { id: '-zLyUAo1gMw', title: 'Cable Tricep Pushdown — 2 Min Tutorial' },
+  'Overhead Tricep Extension':     { id: 'b_r_LW4HEcM', title: 'Overhead DB Tricep Extension — Perfect Form' },
+  'Face Pull':                     { id: 'qEyoBOpvqR4', title: 'Cable Face Pulls — Correct Form' },
+  // Day 2 — Pull
+  'Barbell Row':                   { id: 'phVtqawIgbk', title: 'Barbell Row — Perfect Form' },
+  'Weighted Pull-Ups':             { id: 'OEXosPwzFdc', title: 'Pull-Up — Perfect Form' },
+  'Seated Cable Row':              { id: 'qD1WZ5pSuvk', title: 'Seated Cable Row — Form Tips' },
+  'Lat Pulldown':                  { id: 'bNmvKpJSWKM', title: 'Lat Pulldown — Perfect Form' },
+  'DB Curl':                       { id: 'XE_pHwbst04', title: 'Dumbbell Bicep Curl — Form & Technique' },
+  'Hammer Curl':                   { id: 'BRVDS6HVR9Q', title: 'Hammer Curls — Exercise Tutorial' },
+  // Day 3 — Legs
+  'Back Squat':                    { id: 'iZTxa8NJH2g', title: 'Barbell Squat — Perfect Form' },
+  'Romanian Deadlift':             { id: '5rIqP63yWFg', title: 'RDL — 3 Simple Steps' },
+  'Leg Press':                     { id: 'nDh_BlnLCGc', title: 'Leg Press — Perfect Technique' },
+  'Leg Curl':                      { id: '_lgE0gPvbik', title: 'Leg Curl — Form Tips' },
+  'Hip Thrust':                    { id: 'pF17m_CXfL0', title: 'Hip Thrust — Proper Form & Technique' },
+  // Day 4 — Upper Power
+  'Weighted Dips':                 { id: 'SXBksC78v8M', title: 'Dips — Best Technique' },
+  'Close-Grip Bench':              { id: 'vEUyEOVn3yM', title: 'Close-Grip Bench Press — 3 Mistakes to Avoid' },
+  'EZ-Bar Curl':                   { id: '5NsFLGUf0Fo', title: 'EZ Bar Curl — Perfect Form' },
+  'DB Preacher Curl':              { id: 'fgYBENCgIME', title: 'Preacher Curl — Correct Form' },
+};
+
+function showVideo(name) {
+  const v = EXERCISE_VIDEOS[name];
+  if (!v) return;
+  document.getElementById('videoModalTitle').textContent = v.title;
+  document.getElementById('videoFrame').src = `https://www.youtube-nocookie.com/embed/${v.id}?autoplay=1&rel=0`;
+  document.getElementById('videoModal').classList.add('active');
+}
+
+function closeVideo(e) {
+  if (e && e.target !== document.getElementById('videoModal') && !e.target.classList.contains('video-modal-close')) return;
+  document.getElementById('videoModal').classList.remove('active');
+  document.getElementById('videoFrame').src = '';
 }
 
 // ===== PHASE =====
