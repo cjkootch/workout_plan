@@ -366,8 +366,18 @@ const DAYS = {
 
 // ===== STORAGE =====
 const DB_KEY = 'ironprotocol_v2';
-function loadDB() { try { return JSON.parse(localStorage.getItem(DB_KEY)) || {}; } catch(e) { return {}; } }
-function saveDB(db) { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+// memDB is the live in-memory store; localStorage is the offline cache.
+let memDB = null;
+function loadDB() {
+  if (memDB !== null) return memDB;
+  try { memDB = JSON.parse(localStorage.getItem(DB_KEY)) || {}; }
+  catch(e) { memDB = {}; }
+  return memDB;
+}
+function saveDB(db) {
+  memDB = db;
+  try { localStorage.setItem(DB_KEY, JSON.stringify(db)); } catch(e) {}
+}
 function todayKey() { return new Date().toISOString().slice(0,10); }
 function weekStart() { const d = new Date(); d.setDate(d.getDate() - d.getDay()); return d.toISOString().slice(0,10); }
 
@@ -385,6 +395,12 @@ function saveSetData(day, exName, setIdx, weight, reps, done) {
   if (!db.sessions[key][day][exName]) db.sessions[key][day][exName] = [];
   db.sessions[key][day][exName][setIdx] = { weight, reps, done };
   saveDB(db);
+  // Persist to Neon in background
+  fetch('/api/sets', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ date: key, day, exercise: exName, setIdx, weight, reps, done })
+  }).catch(() => {});
 }
 
 function getLastSession(day, exName) {
@@ -427,8 +443,15 @@ function getWeeklyStats() {
 function saveBW(weight) {
   const db = loadDB();
   if (!db.bodyweight) db.bodyweight = [];
-  db.bodyweight.push({ date: todayKey(), weight: parseFloat(weight) });
+  const entry = { date: todayKey(), weight: parseFloat(weight) };
+  db.bodyweight.push(entry);
   saveDB(db);
+  // Persist to Neon in background
+  fetch('/api/bodyweight', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ weight: entry.weight, date: entry.date })
+  }).catch(() => {});
 }
 function getBWData() { const db = loadDB(); return (db.bodyweight || []).slice(-30); }
 
@@ -455,11 +478,17 @@ function endSession() {
   document.getElementById('scrollArea').classList.remove('with-timer');
   document.getElementById('sessionTimerText').textContent = 'SESSION 00:00';
   document.getElementById('sessionToggle').textContent = 'Start';
-  // Save session duration
+  // Save session duration locally + persist to Neon
   const db = loadDB();
   if (!db.sessionTimes) db.sessionTimes = [];
-  db.sessionTimes.push({ date: todayKey(), duration: elapsed });
+  const sessionDate = todayKey();
+  db.sessionTimes.push({ date: sessionDate, duration: elapsed });
   saveDB(db);
+  fetch('/api/sessions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ duration: elapsed, date: sessionDate })
+  }).catch(() => {});
   updateWeeklySummary();
 }
 function updateSessionTimer() {
@@ -727,12 +756,43 @@ function showPage(id, btn) {
 }
 function toggleP(header) { header.parentElement.classList.toggle('open'); }
 
+// ===== API SYNC =====
+async function initFromAPI() {
+  try {
+    const today = todayKey();
+    const ws    = weekStart();
+    const [dataRes, bwRes] = await Promise.all([
+      fetch(`/api/data?date=${today}&since=${ws}`),
+      fetch('/api/bodyweight')
+    ]);
+    if (!dataRes.ok || !bwRes.ok) return;
+    const [dataJson, bwJson] = await Promise.all([dataRes.json(), bwRes.json()]);
+
+    const db = loadDB();
+    // Merge server sessions into local store (server is authoritative)
+    if (dataJson.sessions) {
+      if (!db.sessions) db.sessions = {};
+      Object.assign(db.sessions, dataJson.sessions);
+    }
+    if (Array.isArray(bwJson)) db.bodyweight = bwJson;
+    saveDB(db);
+
+    // Re-render with server data
+    Object.keys(DAYS).forEach(d => renderDay(d));
+    renderPrinciples();
+    updateWeeklySummary();
+  } catch(e) {
+    console.warn('Neon sync failed — running from local cache:', e);
+  }
+}
+
 // ===== INIT =====
 Object.keys(DAYS).forEach(d => renderDay(d));
 renderPrinciples();
 updateWeeklySummary();
 document.getElementById('weeklySummary').style.display = 'block';
 document.getElementById('sessionBar').classList.add('active');
+initFromAPI(); // async — re-renders once server data arrives
 
 // ===== PWA =====
 if ('serviceWorker' in navigator) {
