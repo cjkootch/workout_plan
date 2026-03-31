@@ -1143,8 +1143,8 @@ function drawStatsBWChart(canvasId, bwData) {
   data.forEach((d, i) => {
     if (!special.has(i)) return;
     ctx.beginPath(); ctx.arc(xOf(i), yOf(d.weight), 3, 0, Math.PI * 2);
-    ctx.fillStyle = '#c9a84c'; ctx.fill();
-    ctx.fillStyle = '#c9a84c'; ctx.font = 'bold 9px DM Mono';
+    ctx.fillStyle = '#8b6914'; ctx.fill();
+    ctx.fillStyle = '#8b6914'; ctx.font = 'bold 9px DM Mono';
     ctx.textAlign = i === 0 ? 'left' : i === n - 1 ? 'right' : 'center';
     ctx.fillText(d.weight, xOf(i) + (i === 0 ? 4 : i === n - 1 ? -4 : 0), yOf(d.weight) - 6);
   });
