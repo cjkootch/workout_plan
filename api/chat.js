@@ -172,27 +172,45 @@ export default async function handler(req) {
   const phase = settings.phase || 'bulk';
   const systemPrompt = buildSystemPrompt(recentRows, prRows, bwRows, overviewRows[0], phase);
 
-  const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': process.env.ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 1024,
-      system: systemPrompt,
-      messages: [
-        ...(history || []).slice(-10),
-        { role: 'user', content: message },
-      ],
-    }),
+  const requestBody = JSON.stringify({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 1024,
+    system: systemPrompt,
+    messages: [
+      ...(history || []).slice(-10),
+      { role: 'user', content: message },
+    ],
   });
+
+  const requestHeaders = {
+    'Content-Type': 'application/json',
+    'x-api-key': process.env.ANTHROPIC_API_KEY,
+    'anthropic-version': '2023-06-01',
+  };
+
+  // Retry up to 3 times on overloaded (529) or rate-limit (529/529) errors
+  let anthropicRes;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) {
+      await new Promise(r => setTimeout(r, 1000 * attempt)); // 1s, 2s backoff
+    }
+    anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: requestHeaders,
+      body: requestBody,
+    });
+    if (anthropicRes.status !== 529 && anthropicRes.status !== 529) break;
+    // On last attempt fall through to error handling below
+  }
 
   if (!anthropicRes.ok) {
     const err = await anthropicRes.text();
-    return new Response(JSON.stringify({ error: 'Claude API error: ' + err }), {
+    // Surface a friendlier message for overload errors
+    const isOverloaded = anthropicRes.status === 529 || err.includes('overloaded');
+    const userMsg = isOverloaded
+      ? 'Coach AI is overloaded right now — try again in a few seconds.'
+      : 'Claude API error: ' + err;
+    return new Response(JSON.stringify({ error: userMsg }), {
       status: 500, headers: { 'Content-Type': 'application/json' },
     });
   }
