@@ -28,12 +28,12 @@ export default async function handler(req) {
       WITH last_date AS (
         SELECT MAX(workout_date) AS d
         FROM workout_sets
-        WHERE day_key = ${day} AND done = true AND workout_date < CURRENT_DATE
+        WHERE day_key = ${day} AND workout_date < CURRENT_DATE AND weight IS NOT NULL
       )
       SELECT ws.exercise_name, ws.weight::float, ws.reps, ws.workout_date::text
       FROM workout_sets ws
       JOIN last_date ld ON ws.workout_date = ld.d
-      WHERE ws.day_key = ${day} AND ws.done = true AND ws.weight IS NOT NULL
+      WHERE ws.day_key = ${day} AND ws.weight IS NOT NULL
       ORDER BY ws.exercise_name, ws.set_index
     `,
     sql`SELECT key, value FROM user_settings WHERE key LIKE ${'target:%'}`,

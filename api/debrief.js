@@ -21,18 +21,20 @@ export default async function handler(req) {
       SELECT exercise_name, weight::float, reps, set_index, done
       FROM workout_sets
       WHERE workout_date = CURRENT_DATE AND day_key = ${dayId}
+        AND (weight IS NOT NULL OR reps IS NOT NULL)
       ORDER BY exercise_name, set_index
     `,
     sql`
       WITH prev_date AS (
         SELECT MAX(workout_date) AS d
         FROM workout_sets
-        WHERE day_key = ${dayId} AND done = true AND workout_date < CURRENT_DATE
+        WHERE day_key = ${dayId} AND workout_date < CURRENT_DATE
+          AND (weight IS NOT NULL OR reps IS NOT NULL)
       )
       SELECT ws.exercise_name, ws.weight::float, ws.reps, ws.set_index, ws.workout_date::text
       FROM workout_sets ws
       JOIN prev_date pd ON ws.workout_date = pd.d
-      WHERE ws.day_key = ${dayId} AND ws.done = true
+      WHERE ws.day_key = ${dayId} AND (ws.weight IS NOT NULL OR ws.reps IS NOT NULL)
       ORDER BY ws.exercise_name, ws.set_index
     `,
     sql`SELECT weight::float AS weight FROM bodyweight_logs ORDER BY log_date DESC LIMIT 1`,
@@ -48,7 +50,7 @@ export default async function handler(req) {
     return out;
   }
 
-  const today    = groupByExercise(todayRows.filter(r => r.done));
+  const today    = groupByExercise(todayRows); // include all sets with data, not just done=true
   const prev     = groupByExercise(prevRows);
   const prevDate = prevRows[0]?.workout_date;
   const rpe      = rpeRows[0]?.value;
