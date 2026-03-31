@@ -255,6 +255,10 @@
   .chat-send { background:var(--gold); border:none; color:#fff; font-family:inherit; font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; border-radius:8px; padding:0 1.1rem; cursor:pointer; height:44px; flex-shrink:0; font-weight:500; }
   .chat-send:active { background:var(--gold-dim); }
   .chat-send:disabled { opacity:0.45; cursor:default; }
+  .chat-mic { background:var(--surface); border:1.5px solid var(--border-strong); border-radius:8px; width:44px; height:44px; flex-shrink:0; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.1rem; transition:all 0.15s; }
+  .chat-mic:active { background:var(--gold-bg); }
+  .chat-mic.recording { background:#fee; border-color:#e55; animation:mic-pulse 1s ease-in-out infinite; }
+  @keyframes mic-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(229,85,85,0.4)} 50%{box-shadow:0 0 0 6px rgba(229,85,85,0)} }
   .chat-cursor { display:inline-block; width:2px; height:0.9em; background:var(--gold); margin-left:1px; vertical-align:middle; border-radius:1px; animation:blink 0.7s step-end infinite; }
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 
@@ -1477,6 +1481,7 @@ async function renderCoach() {
       <div class="chat-input-row">
         <textarea class="chat-input" id="chatInput" placeholder="Ask your coach..." rows="1"
           onkeydown="chatKeydown(event)" oninput="chatAutoResize(this)"></textarea>
+        <button class="chat-mic" id="chatMic" onclick="toggleVoice()" title="Voice input">🎙️</button>
         <button class="chat-send" id="chatSend" onclick="sendChatMessage()">Send</button>
       </div>
     </div>`;
@@ -1605,6 +1610,67 @@ async function sendChatMessage() {
   input.disabled   = false;
   input.focus();
   msgs.scrollTop = msgs.scrollHeight;
+}
+
+// ===== VOICE INPUT =====
+let _recognition = null;
+let _isRecording = false;
+
+function toggleVoice() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    alert('Voice input is not supported in this browser. Try Chrome or Safari on iOS.');
+    return;
+  }
+
+  if (_isRecording) {
+    _recognition?.stop();
+    return;
+  }
+
+  const mic   = document.getElementById('chatMic');
+  const input = document.getElementById('chatInput');
+
+  _recognition = new SpeechRecognition();
+  _recognition.lang            = 'en-US';
+  _recognition.continuous      = false;
+  _recognition.interimResults  = true;
+  _recognition.maxAlternatives = 1;
+
+  const baseText = input.value; // preserve any text already typed
+
+  _recognition.onstart = () => {
+    _isRecording = true;
+    mic.classList.add('recording');
+    mic.textContent = '⏹️';
+  };
+
+  _recognition.onresult = (e) => {
+    const transcript = Array.from(e.results)
+      .map(r => r[0].transcript)
+      .join('');
+    input.value = baseText ? baseText + ' ' + transcript : transcript;
+    chatAutoResize(input);
+  };
+
+  _recognition.onend = () => {
+    _isRecording = false;
+    mic.classList.remove('recording');
+    mic.textContent = '🎙️';
+    // Auto-send if something was captured
+    if (input.value.trim()) sendChatMessage();
+  };
+
+  _recognition.onerror = (e) => {
+    _isRecording = false;
+    mic.classList.remove('recording');
+    mic.textContent = '🎙️';
+    if (e.error !== 'no-speech' && e.error !== 'aborted') {
+      console.warn('Speech recognition error:', e.error);
+    }
+  };
+
+  _recognition.start();
 }
 
 // ===== PRE-WORKOUT BRIEF =====
