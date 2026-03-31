@@ -265,6 +265,8 @@
   /* SMART PRE-FILL */
   .set-input[data-prefilled="true"] { color:var(--muted); }
   .set-input[data-prefilled="true"]:focus { color:var(--text); }
+  /* BODYWEIGHT BADGE */
+  .set-bw-badge { font-size:0.72rem; font-weight:600; letter-spacing:0.06em; color:var(--gold); background:var(--gold-bg); border:1px solid var(--gold-border); border-radius:6px; padding:0 0.55rem; height:36px; display:flex; align-items:center; flex-shrink:0; }
 
   /* BRIEF CARD */
   .brief-card { background:var(--surface); border:1px solid var(--gold-border); border-radius:12px; margin:0 1.1rem 1rem; overflow:hidden; }
@@ -422,7 +424,7 @@ const DAYS = {
         { name: 'Barbell Bent-Over Row', note: 'Overhand grip. Pull to lower chest. Brace hard.', sets: 4, reps: '5–6', rest: '3 min', rpe: '8–9', restSec: 180 },
         { name: 'Seated Cable Row (Wide Grip)', note: 'Drive elbows back hard. Pause at contraction 1s.', sets: 4, reps: '8–10', rest: '2 min', rpe: '8', restSec: 120 },
         { name: 'Single-Arm DB Row', note: 'Full ROM. Let shoulder blade retract and protract fully.', sets: 3, reps: '10–12', rest: '90s', rpe: '8', restSec: 90 },
-        { name: 'TRX Row (Feet Elevated)', note: 'Feet elevated = harder. Strict tempo. Full chest to handles.', sets: 3, reps: '12–15', rest: '90s', rpe: '7', restSec: 90 }
+        { name: 'TRX Row (Feet Elevated)', note: 'Feet elevated = harder. Strict tempo. Full chest to handles.', sets: 3, reps: '12–15', rest: '90s', rpe: '7', restSec: 90, bw: true }
       ]},
       { label: 'C — Lat Width', items: [
         { name: 'Lat Pulldown (Wide Overhand)', note: 'Chest up, lean slightly back. Pull to upper chest.', sets: 3, reps: '10–12', rest: '2 min', rpe: '8', restSec: 120 },
@@ -479,8 +481,8 @@ const DAYS = {
       ]},
       { label: 'D — Core', items: [
         { name: 'Cable Crunch', note: 'Kneel, pull elbows to thighs. Round the lumbar. Best weighted core movement.', sets: 4, reps: '15–20', rest: '60s', rpe: '8', restSec: 60 },
-        { name: 'Hanging Leg Raise', note: 'Control descent. Posterior pelvic tilt at top.', sets: 3, reps: '12–15', rest: 'No rest', rpe: '8', ss: 'SS C', restSec: 0 },
-        { name: 'Ab Wheel Rollout', note: 'From knees. Full extension if possible. Superset with above.', sets: 3, reps: '10–12', rest: '60s', rpe: '8', ss: 'SS C', restSec: 60 }
+        { name: 'Hanging Leg Raise', note: 'Control descent. Posterior pelvic tilt at top.', sets: 3, reps: '12–15', rest: 'No rest', rpe: '8', ss: 'SS C', restSec: 0, bw: true },
+        { name: 'Ab Wheel Rollout', note: 'From knees. Full extension if possible. Superset with above.', sets: 3, reps: '10–12', rest: '60s', rpe: '8', ss: 'SS C', restSec: 60, bw: true }
       ]}
     ]
   },
@@ -499,9 +501,9 @@ const DAYS = {
         { name: 'KB Turkish Get-Up', note: 'Slow and deliberate. Best unilateral stability movement.', sets: 3, reps: '3 / side', rest: '90s', rpe: '7', restSec: 90 }
       ]},
       { label: 'C — Core Finisher', items: [
-        { name: 'Plank Variations', note: 'Standard → Side Plank L → Side Plank R. 45s each.', sets: 3, reps: '45s each', rest: '60s', rpe: '7', restSec: 60 },
+        { name: 'Plank Variations', note: 'Standard → Side Plank L → Side Plank R. 45s each.', sets: 3, reps: '45s each', rest: '60s', rpe: '7', restSec: 60, bw: true },
         { name: 'Pallof Press (Cable)', note: 'Anti-rotation. Core stability under load. Both sides.', sets: 3, reps: '12 / side', rest: '60s', rpe: '7', restSec: 60 },
-        { name: 'Dead Bug', note: 'Press lower back INTO floor the entire time. Slow and controlled.', sets: 3, reps: '10 / side', rest: '60s', rpe: '6', restSec: 60 }
+        { name: 'Dead Bug', note: 'Press lower back INTO floor the entire time. Slow and controlled.', sets: 3, reps: '10 / side', rest: '60s', rpe: '6', restSec: 60, bw: true }
       ]}
     ]
   }
@@ -796,8 +798,12 @@ function renderDay(dayId) {
           const prevHint = (prevW || prevR) ? `<span class="set-prev">${prevW || '—'}×${prevR || '—'}</span>` : '';
           html += `<div class="set-row">`;
           html += `<span class="set-num">Set ${i+1}${prevHint}</span>`;
-          const prefill = sd.weight || lastWeight;
-          html += `<input class="set-input" type="number" inputmode="decimal" placeholder="lbs" value="${prefill}" ${!sd.weight && lastWeight ? 'data-prefilled="true"' : ''} onchange="logSet('${dayId}','${ex.name.replace(/'/g,"\\'")}',${i},this)" data-field="weight">`;
+          if (ex.bw) {
+            html += `<span class="set-bw-badge">BW</span><input type="hidden" value="" data-field="weight">`;
+          } else {
+            const prefill = sd.weight || lastWeight;
+            html += `<input class="set-input" type="number" inputmode="decimal" placeholder="lbs" value="${prefill}" ${!sd.weight && lastWeight ? 'data-prefilled="true"' : ''} onchange="logSet('${dayId}','${ex.name.replace(/'/g,"\\'")}',${i},this)" data-field="weight">`;
+          }
           html += `<span class="set-x">×</span>`;
           html += `<input class="set-input" type="number" inputmode="numeric" placeholder="${ex.reps}" value="${sd.reps || ''}" onchange="logSet('${dayId}','${ex.name.replace(/'/g,"\\'")}',${i},this)" data-field="reps">`;
           html += `<button class="set-check ${sd.done ? 'done' : ''}" onclick="completeSet('${dayId}','${ex.name.replace(/'/g,"\\'")}',${i},this,${ex.restSec})">✓</button>`;
