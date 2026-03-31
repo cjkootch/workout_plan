@@ -97,7 +97,8 @@
   .ex-card.expanded .ex-expand-hint { opacity:0; }
   .set-row { display:flex; align-items:center; gap:0.65rem; padding:0.6rem 0; border-bottom:1px solid var(--border); }
   .set-row:last-child { border-bottom:none; }
-  .set-num { font-size:0.82rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); width:2.75rem; flex-shrink:0; }
+  .set-num { font-size:0.82rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); width:2.75rem; flex-shrink:0; line-height:1.3; }
+  .set-prev { display:block; font-size:0.6rem; color:var(--gold); font-style:italic; letter-spacing:0; text-transform:none; margin-top:0.2rem; white-space:nowrap; }
   .set-input { background:var(--bg); border:1.5px solid var(--border-strong); border-radius:8px; color:var(--text); font-family:inherit; font-size:1rem; padding:0.5rem 0.4rem; width:4.5rem; text-align:center; min-height:52px; }
   .set-input:focus { outline:none; border-color:var(--gold); box-shadow:0 0 0 3px var(--gold-bg); }
   .set-input::placeholder { color:var(--muted); font-size:0.8rem; }
@@ -610,9 +611,13 @@ function renderDay(dayId) {
         html += `<div class="set-log-area">`;
         for (let i = 0; i < ex.sets; i++) {
           const sd = today && today[i] ? today[i] : { weight: '', reps: '', done: false };
-          const lastWeight = last && last.sets[i] && last.sets[i].weight ? last.sets[i].weight : '';
+          const lastS = last && last.sets[i];
+          const lastWeight = lastS && lastS.weight ? lastS.weight : '';
+          const prevW = lastS && lastS.weight ? lastS.weight : null;
+          const prevR = lastS && lastS.reps ? lastS.reps : null;
+          const prevHint = (prevW || prevR) ? `<span class="set-prev">${prevW || '—'}×${prevR || '—'}</span>` : '';
           html += `<div class="set-row">`;
-          html += `<span class="set-num">Set ${i+1}</span>`;
+          html += `<span class="set-num">Set ${i+1}${prevHint}</span>`;
           html += `<input class="set-input" type="number" inputmode="decimal" placeholder="${lastWeight || 'lbs'}" value="${sd.weight || ''}" onchange="logSet('${dayId}','${ex.name.replace(/'/g,"\\'")}',${i},this)" data-field="weight">`;
           html += `<span class="set-x">×</span>`;
           html += `<input class="set-input" type="number" inputmode="numeric" placeholder="${ex.reps}" value="${sd.reps || ''}" onchange="logSet('${dayId}','${ex.name.replace(/'/g,"\\'")}',${i},this)" data-field="reps">`;
