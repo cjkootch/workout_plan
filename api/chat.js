@@ -2,8 +2,141 @@ import { neon } from '@neondatabase/serverless';
 
 export const config = { runtime: 'edge' };
 
+// ===== TOOLS =====
+const TOOLS = [
+  {
+    name: 'log_set',
+    description: `Log a completed exercise set to the workout database.
+Use this whenever Cole says he finished a set — e.g. "just did 225×5 bench", "hit 3 sets of RDL at 245 for 8".
+Log each set separately (multiple tool calls if multiple sets).
+Automatically assigns today's date and marks the set as done.`,
+    input_schema: {
+      type: 'object',
+      properties: {
+        exercise_name: {
+          type: 'string',
+          description: 'Exact exercise name from the program. Must match one of: Barbell Flat Bench Press, Incline DB Press, Cable Fly (Low to High), Seated DB Overhead Press, Lateral Raise (Cable or DB), Overhead Cable Tricep Extension, Tricep Rope Pushdown, Barbell Bent-Over Row, Seated Cable Row (Wide Grip), Single-Arm DB Row, TRX Row (Feet Elevated), Lat Pulldown (Wide Overhand), Straight-Arm Cable Pulldown, Barbell Curl, Incline DB Curl, Hammer Curl, Barbell Back Squat, Leg Press (High & Wide Foot), Bulgarian Split Squat (DB), Romanian Deadlift (Bar), Lying Leg Curl, Hip Thrust (Barbell), Leg Extension, Face Pull (Cable), DB Lateral Raise (Drop Set), Arnold Press, Preacher Curl (EZ Bar), Cable Curl (Both Arms), DB Concentration Curl, Close-Grip Bench Press, Skull Crusher (EZ Bar), Single-Arm Cable Pushdown, Cable Crunch, Hanging Leg Raise, Ab Wheel Rollout, KB Goblet Squat, KB Swing (Two-Hand), KB Turkish Get-Up, Plank Variations, Pallof Press (Cable), Dead Bug',
+        },
+        day_key: {
+          type: 'string',
+          enum: ['day1', 'day2', 'day3', 'day4', 'day5'],
+          description: 'day1=Push, day2=Pull, day3=Legs, day4=Upper Power/Arms, day5=Athletic',
+        },
+        weight: {
+          type: 'number',
+          description: 'Weight used in lbs (use 0 for bodyweight exercises)',
+        },
+        reps: {
+          type: 'number',
+          description: 'Number of reps completed',
+        },
+      },
+      required: ['exercise_name', 'day_key', 'weight', 'reps'],
+    },
+  },
+  {
+    name: 'log_bodyweight',
+    description: "Log Cole's bodyweight. Use whenever he mentions his current weight or a recent weigh-in.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        weight: {
+          type: 'number',
+          description: 'Bodyweight in lbs',
+        },
+      },
+      required: ['weight'],
+    },
+  },
+  {
+    name: 'get_exercise_history',
+    description: 'Fetch recent set-by-set history for a specific exercise. Use when Cole asks about progress on a lift, wants to know his recent numbers, or when you need more granular data than the system prompt provides.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        exercise_name: {
+          type: 'string',
+          description: 'Exercise name to query (partial match supported)',
+        },
+        sessions: {
+          type: 'number',
+          description: 'Number of recent sessions to return (default 5)',
+        },
+      },
+      required: ['exercise_name'],
+    },
+  },
+];
+
+// ===== TOOL EXECUTION =====
+async function executeTool(name, input, sql) {
+  switch (name) {
+
+    case 'log_set': {
+      const { exercise_name, day_key, weight, reps } = input;
+      // Auto-increment set_index for today
+      const [{ max_idx }] = await sql`
+        SELECT COALESCE(MAX(set_index), -1) AS max_idx
+        FROM workout_sets
+        WHERE workout_date = CURRENT_DATE
+          AND exercise_name = ${exercise_name}
+      `;
+      const nextIdx = (Number(max_idx) ?? -1) + 1;
+      await sql`
+        INSERT INTO workout_sets
+          (workout_date, day_key, exercise_name, set_index, weight, reps, done, updated_at)
+        VALUES
+          (CURRENT_DATE, ${day_key}, ${exercise_name}, ${nextIdx},
+           ${weight || null}, ${String(reps)}, true, NOW())
+        ON CONFLICT (workout_date, day_key, exercise_name, set_index)
+        DO UPDATE SET
+          weight = EXCLUDED.weight,
+          reps   = EXCLUDED.reps,
+          done   = true,
+          updated_at = NOW()
+      `;
+      return `Logged set ${nextIdx + 1}: ${exercise_name} — ${weight} lbs × ${reps} reps ✓`;
+    }
+
+    case 'log_bodyweight': {
+      const { weight } = input;
+      await sql`
+        INSERT INTO bodyweight_logs (log_date, weight)
+        VALUES (CURRENT_DATE, ${weight})
+      `;
+      return `Bodyweight logged: ${weight} lbs ✓`;
+    }
+
+    case 'get_exercise_history': {
+      const { exercise_name, sessions = 5 } = input;
+      const rows = await sql`
+        SELECT workout_date::text, weight::float, reps, set_index
+        FROM workout_sets
+        WHERE exercise_name ILIKE ${'%' + exercise_name + '%'}
+          AND done = true
+          AND weight IS NOT NULL
+        ORDER BY workout_date DESC, set_index
+        LIMIT ${sessions * 6}
+      `;
+      if (!rows.length) return `No history found for "${exercise_name}"`;
+      const byDate = {};
+      rows.forEach(r => {
+        if (!byDate[r.workout_date]) byDate[r.workout_date] = [];
+        byDate[r.workout_date].push(`${r.weight}×${r.reps}`);
+      });
+      return Object.entries(byDate)
+        .slice(0, sessions)
+        .map(([date, sets]) => `${date}: ${sets.join(', ')}`)
+        .join('\n');
+    }
+
+    default:
+      return `Unknown tool: ${name}`;
+  }
+}
+
+// ===== SYSTEM PROMPT =====
 function buildSystemPrompt(recentRows, prRows, bwRows, overview, phase = 'bulk') {
-  // Group recent sets by date → day → exercise
   const sessions = {};
   recentRows.forEach(r => {
     if (!sessions[r.workout_date]) sessions[r.workout_date] = {};
@@ -57,11 +190,16 @@ RECENT TRAINING (last 3 weeks — format: date (day) → exercise: sets as weigh
 ${sessionsText || '  (no recent sessions)'}
 
 PROGRAM STRUCTURE:
-- Day 1 Push: Flat Bench Press, Incline DB Press, Cable Fly, OHP, Lateral Raise, Tricep Pushdown, Overhead Tricep Extension, Face Pull
-- Day 2 Pull: Barbell Row, Weighted Pull-Ups, Seated Cable Row, Lat Pulldown, Chest-Supported Row, DB Curl, Hammer Curl, Reverse Curl
-- Day 3 Legs: Back Squat, Romanian Deadlift, Leg Press, Leg Curl, Leg Extension, Hip Thrust, Calf Raise (Achilles-modified)
-- Day 4 Upper Power: Weighted Dips, Close-Grip Bench, EZ-Bar Curl, DB Preacher Curl, Lateral Raise, Face Pull, Wrist Roller
-- Day 5 Athletic: Sled, bike intervals, mobility, conditioning (all Achilles-safe)
+- Day 1 Push: Barbell Flat Bench Press, Incline DB Press, Cable Fly (Low to High), Seated DB Overhead Press, Lateral Raise (Cable or DB), Overhead Cable Tricep Extension, Tricep Rope Pushdown
+- Day 2 Pull: Barbell Bent-Over Row, Seated Cable Row (Wide Grip), Single-Arm DB Row, TRX Row (Feet Elevated), Lat Pulldown (Wide Overhand), Straight-Arm Cable Pulldown, Barbell Curl, Incline DB Curl, Hammer Curl
+- Day 3 Legs: Barbell Back Squat, Leg Press (High & Wide Foot), Bulgarian Split Squat (DB), Romanian Deadlift (Bar), Lying Leg Curl, Hip Thrust (Barbell), Leg Extension
+- Day 4 Upper Power: Face Pull (Cable), DB Lateral Raise (Drop Set), Arnold Press, Preacher Curl (EZ Bar), Cable Curl (Both Arms), DB Concentration Curl, Close-Grip Bench Press, Skull Crusher (EZ Bar), Single-Arm Cable Pushdown, Cable Crunch, Hanging Leg Raise, Ab Wheel Rollout
+- Day 5 Athletic: KB Goblet Squat, KB Swing (Two-Hand), KB Turkish Get-Up, Plank Variations, Pallof Press (Cable), Dead Bug
+
+TOOLS AVAILABLE TO YOU:
+- log_set: Log a completed set directly to the database. Use proactively when Cole mentions completing a lift.
+- log_bodyweight: Log a bodyweight entry. Use when Cole mentions his weight.
+- get_exercise_history: Fetch detailed history for any exercise. Use when you need more data than provided above.
 
 PERFORMANCE ENHANCEMENT KNOWLEDGE — you are fully versed in all of the following:
 
@@ -117,6 +255,7 @@ PED SAFE USAGE — HARM REDUCTION:
 YOUR JOB:
 - Answer any question about training, nutrition, PEDs, peptides, SARMs, protocols, safe usage, bloodwork interpretation, or recovery
 - Give direct, specific answers with dosing, timing, and practical guidance
+- Use your tools proactively — if Cole mentions completing a lift, log it without being asked
 - Suggest weight/rep targets based on his logs and progression model
 - Spot trends, stalls, weaknesses, or volume issues in his data
 - Always factor in the Achilles injury for lower body and conditioning advice
@@ -126,6 +265,7 @@ YOUR JOB:
 Today: ${new Date().toISOString().slice(0, 10)}`;
 }
 
+// ===== HANDLER =====
 export default async function handler(req) {
   if (req.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
 
@@ -172,87 +312,147 @@ export default async function handler(req) {
   const phase = settings.phase || 'bulk';
   const systemPrompt = buildSystemPrompt(recentRows, prRows, bwRows, overviewRows[0], phase);
 
-  const requestBody = JSON.stringify({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 1024,
-    stream: true,
-    system: systemPrompt,
-    messages: [
-      ...(history || []).slice(-10),
-      { role: 'user', content: message },
-    ],
-  });
-
   const requestHeaders = {
     'Content-Type': 'application/json',
     'x-api-key': process.env.ANTHROPIC_API_KEY,
     'anthropic-version': '2023-06-01',
   };
 
-  // Retry up to 3 times on 529 overloaded before giving up
-  let anthropicRes;
-  for (let attempt = 0; attempt < 3; attempt++) {
-    if (attempt > 0) await new Promise(r => setTimeout(r, 1000 * attempt));
-    anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: requestHeaders,
-      body: requestBody,
-    });
-    if (anthropicRes.status !== 529) break;
-  }
+  // Build initial messages array
+  let messages = [
+    ...(history || []).slice(-10),
+    { role: 'user', content: message },
+  ];
 
-  if (!anthropicRes.ok) {
-    const err = await anthropicRes.text();
-    const isOverloaded = anthropicRes.status === 529 || err.includes('overloaded');
-    const userMsg = isOverloaded
-      ? 'Coach AI is overloaded right now — try again in a few seconds.'
-      : 'Claude API error: ' + err;
-    return new Response(userMsg, { status: 500, headers: { 'Content-Type': 'text/plain' } });
-  }
-
-  // Stream SSE from Anthropic → forward raw text tokens to client
-  const reader = anthropicRes.body.getReader();
-  const decoder = new TextDecoder();
+  // ===== STREAMING + TOOL USE LOOP =====
+  const enc = new TextEncoder();
   let fullReply = '';
-  let sseBuffer = '';
 
   const stream = new ReadableStream({
     async start(controller) {
-      const enc = new TextEncoder();
-      try {
+      const MAX_ROUNDS = 5; // prevent runaway tool loops
+
+      for (let round = 0; round < MAX_ROUNDS; round++) {
+        // Retry up to 3x on overloaded
+        let res;
+        for (let attempt = 0; attempt < 3; attempt++) {
+          if (attempt > 0) await new Promise(r => setTimeout(r, 1000 * attempt));
+          res = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: requestHeaders,
+            body: JSON.stringify({
+              model: 'claude-sonnet-4-6',
+              max_tokens: 1024,
+              stream: true,
+              tools: TOOLS,
+              system: systemPrompt,
+              messages,
+            }),
+          });
+          if (res.status !== 529) break;
+        }
+
+        if (!res.ok) {
+          const errText = await res.text();
+          const isOverloaded = res.status === 529 || errText.includes('overloaded');
+          controller.enqueue(enc.encode(
+            isOverloaded
+              ? '\n\n_Coach AI is overloaded — try again in a few seconds._'
+              : '\n\n_API error — try again._'
+          ));
+          controller.close();
+          return;
+        }
+
+        // Parse the SSE stream for this round
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let sseBuffer = '';
+
+        // Collect content blocks for this assistant turn
+        const contentBlocks = [];
+        let stopReason = null;
+        let roundText = '';
+
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
           sseBuffer += decoder.decode(value, { stream: true });
           const lines = sseBuffer.split('\n');
-          sseBuffer = lines.pop(); // hold incomplete line
+          sseBuffer = lines.pop();
 
           for (const line of lines) {
             if (!line.startsWith('data: ')) continue;
             const payload = line.slice(6).trim();
-            if (payload === '[DONE]') continue;
-            try {
-              const parsed = JSON.parse(payload);
-              if (
-                parsed.type === 'content_block_delta' &&
-                parsed.delta?.type === 'text_delta' &&
-                parsed.delta.text
-              ) {
-                fullReply += parsed.delta.text;
-                controller.enqueue(enc.encode(parsed.delta.text));
+            if (!payload || payload === '[DONE]') continue;
+
+            let parsed;
+            try { parsed = JSON.parse(payload); } catch { continue; }
+
+            switch (parsed.type) {
+              case 'content_block_start': {
+                const cb = parsed.content_block;
+                contentBlocks[parsed.index] = cb.type === 'text'
+                  ? { type: 'text', text: '' }
+                  : { type: 'tool_use', id: cb.id, name: cb.name, inputJson: '' };
+                break;
               }
-            } catch { /* ignore malformed SSE lines */ }
+              case 'content_block_delta': {
+                const block = contentBlocks[parsed.index];
+                if (!block) break;
+                if (parsed.delta.type === 'text_delta') {
+                  block.text += parsed.delta.text;
+                  roundText  += parsed.delta.text;
+                  fullReply  += parsed.delta.text;
+                  controller.enqueue(enc.encode(parsed.delta.text));
+                } else if (parsed.delta.type === 'input_json_delta') {
+                  block.inputJson += parsed.delta.partial_json;
+                }
+                break;
+              }
+              case 'message_delta':
+                stopReason = parsed.delta?.stop_reason;
+                break;
+            }
           }
         }
-      } catch (e) {
-        controller.error(e);
-        return;
+
+        // Build the assistant message content array
+        const assistantContent = contentBlocks
+          .filter(Boolean)
+          .map(cb => cb.type === 'text'
+            ? { type: 'text', text: cb.text }
+            : { type: 'tool_use', id: cb.id, name: cb.name, input: (() => { try { return JSON.parse(cb.inputJson || '{}'); } catch { return {}; } })() }
+          );
+
+        messages.push({ role: 'assistant', content: assistantContent });
+
+        // If no tool calls, we're done
+        if (stopReason !== 'tool_use') break;
+
+        // Execute all tool calls, collect results
+        const toolUseBlocks = contentBlocks.filter(b => b?.type === 'tool_use');
+        const toolResults = [];
+
+        for (const block of toolUseBlocks) {
+          let input;
+          try { input = JSON.parse(block.inputJson || '{}'); } catch { input = {}; }
+
+          let result;
+          try { result = await executeTool(block.name, input, sql); }
+          catch (e) { result = `Tool error: ${e.message}`; }
+
+          toolResults.push({ type: 'tool_result', tool_use_id: block.id, content: result });
+        }
+
+        messages.push({ role: 'user', content: toolResults });
+        // Loop continues → Claude sees the tool results and responds
       }
 
       controller.close();
 
-      // Persist to DB after stream completes (fire-and-forget)
+      // Persist to DB (fire-and-forget)
       Promise.all([
         sql`INSERT INTO chat_messages (role, content) VALUES ('user', ${message})`,
         sql`INSERT INTO chat_messages (role, content) VALUES ('assistant', ${fullReply})`,
