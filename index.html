@@ -265,7 +265,7 @@
   <div class="header-top">
     <div class="logo">IRON<span>PROTOCOL</span></div>
     <div class="header-badge">
-      <div>235 lbs · TRT <strong>100–150mg</strong></div>
+      <div id="headerProfileLine">235 lbs · TRT <strong>100–150mg</strong></div>
       <div>5-Day PPL/Hybrid · 12 Weeks</div>
     </div>
   </div>
@@ -1352,6 +1352,11 @@ async function loadPhase() {
     const res = await fetch('/api/settings');
     const data = await res.json();
     window._phase = data.phase || 'bulk';
+    // Update TRT display in header badge
+    if (data.trt_dose) {
+      const el = document.getElementById('headerProfileLine');
+      if (el) el.innerHTML = `235 lbs · TRT <strong>${escapeHtml(data.trt_dose)}</strong>`;
+    }
   } catch {}
 }
 

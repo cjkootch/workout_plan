@@ -49,6 +49,25 @@ Automatically assigns today's date and marks the set as done.`,
     },
   },
   {
+    name: 'update_profile',
+    description: `Update Cole's profile settings in the app. Use when he tells you something changed about his protocol — TRT dose, training phase, calorie/protein targets, etc. The UI will reflect the change immediately.`,
+    input_schema: {
+      type: 'object',
+      properties: {
+        key: {
+          type: 'string',
+          enum: ['trt_dose', 'phase', 'protein_target', 'calorie_target'],
+          description: 'Setting to update. trt_dose: e.g. "210mg/week". phase: "bulk", "cut", or "maintain". protein_target: grams as number string. calorie_target: kcal as number string.',
+        },
+        value: {
+          type: 'string',
+          description: 'New value for the setting',
+        },
+      },
+      required: ['key', 'value'],
+    },
+  },
+  {
     name: 'get_exercise_history',
     description: 'Fetch recent set-by-set history for a specific exercise. Use when Cole asks about progress on a lift, wants to know his recent numbers, or when you need more granular data than the system prompt provides.',
     input_schema: {
@@ -130,13 +149,25 @@ async function executeTool(name, input, sql) {
         .join('\n');
     }
 
+    case 'update_profile': {
+      const { key, value } = input;
+      const allowed = ['trt_dose', 'phase', 'protein_target', 'calorie_target'];
+      if (!allowed.includes(key)) return `Unknown profile key: ${key}`;
+      await sql`
+        INSERT INTO user_settings (key, value, updated_at)
+        VALUES (${key}, ${value}, NOW())
+        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+      `;
+      return `Profile updated: ${key} = ${value} ✓`;
+    }
+
     default:
       return `Unknown tool: ${name}`;
   }
 }
 
 // ===== SYSTEM PROMPT =====
-function buildSystemPrompt(recentRows, prRows, bwRows, overview, phase = 'bulk') {
+function buildSystemPrompt(recentRows, prRows, bwRows, overview, phase = 'bulk', settings = {}) {
   const sessions = {};
   recentRows.forEach(r => {
     if (!sessions[r.workout_date]) sessions[r.workout_date] = {};
@@ -175,7 +206,7 @@ COLE'S PROFILE:
 - Goal: ${phase === 'bulk' ? 'Lean bulk — 3,200–3,600 kcal/day, 235–250g protein daily' : phase === 'cut' ? 'Cut — 2,400–2,800 kcal/day, 235g+ protein to preserve muscle' : 'Maintain/Recomp — ~3,000 kcal/day, 235g+ protein'}
 - Program: 5-Day PPL/Hybrid (Push / Pull / Legs / Upper Power / Athletic)
 - Total sessions logged: ${overview?.total_days || 0}, total sets: ${overview?.total_sets || 0}, total tonnage: ${overview?.total_tonnage || 0} lbs
-- TRT: 100–150mg/week testosterone (upper physiological range — recovery and protein synthesis are enhanced)
+- TRT: ${settings.trt_dose || '100–150mg/week'} testosterone (recovery and protein synthesis enhanced above natural baseline)
 - Achilles tendinopathy — avoid box jumps, sprint accelerations, heavy calf raises; safe: bike, rower, controlled squats, leg press, hip thrust
 - Progression model: double progression — hit top of rep range → add weight next session; can't hit bottom of range → reduce 5–10%
 - Deload every 6th week: drop volume 40%, keep intensity
@@ -310,7 +341,7 @@ export default async function handler(req) {
 
   const settings = Object.fromEntries(settingsRows.map(r => [r.key, r.value]));
   const phase = settings.phase || 'bulk';
-  const systemPrompt = buildSystemPrompt(recentRows, prRows, bwRows, overviewRows[0], phase);
+  const systemPrompt = buildSystemPrompt(recentRows, prRows, bwRows, overviewRows[0], phase, settings);
 
   const requestHeaders = {
     'Content-Type': 'application/json',
