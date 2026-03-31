@@ -168,6 +168,40 @@
   .tab.active .tab-label { color:var(--gold); }
   .tab-icon { font-size:0.52rem; letter-spacing:0.06em; text-transform:uppercase; color:var(--smoke); transition:color 0.15s; }
   .tab.active .tab-icon { color:var(--gold); }
+
+  /* STATS PAGE */
+  .stats-overview { display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; margin-bottom:1rem; }
+  .stat-big-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:0.9rem 1rem; text-align:center; }
+  .stat-big-card.gold-border { border-color:var(--gold-dim); background:var(--gold-bg); }
+  .stat-big-value { font-family:'Bebas Neue',sans-serif; font-size:1.9rem; color:var(--gold); letter-spacing:0.04em; line-height:1; }
+  .stat-big-label { font-size:0.43rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--smoke); margin-top:0.3rem; }
+  .stats-chart-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:0.9rem 1rem 1rem; margin-bottom:1rem; }
+  .stats-chart-title { font-size:0.46rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--smoke); margin-bottom:0.75rem; }
+  .stats-canvas { width:100%; height:130px; display:block; }
+  .stats-canvas.tall { height:160px; }
+  .pr-list { list-style:none; }
+  .pr-item { display:flex; justify-content:space-between; align-items:center; padding:0.55rem 0; border-bottom:1px solid var(--border); gap:0.5rem; }
+  .pr-item:last-child { border-bottom:none; }
+  .pr-name { font-size:0.58rem; color:var(--white); flex:1; line-height:1.3; }
+  .pr-right { text-align:right; flex-shrink:0; }
+  .pr-value { font-size:0.65rem; color:var(--gold); font-weight:500; white-space:nowrap; }
+  .pr-date { font-size:0.45rem; color:var(--smoke); margin-top:0.15rem; }
+  .session-list { list-style:none; }
+  .session-item { display:flex; justify-content:space-between; align-items:center; padding:0.5rem 0; border-bottom:1px solid var(--border); }
+  .session-item:last-child { border-bottom:none; }
+  .session-date { font-size:0.6rem; color:var(--white); }
+  .session-day-tag { font-size:0.43rem; color:var(--smoke); letter-spacing:0.06em; margin-top:0.1rem; }
+  .session-right { text-align:right; }
+  .session-sets { font-size:0.6rem; color:var(--gold); }
+  .session-dur { font-size:0.45rem; color:var(--smoke); margin-top:0.1rem; }
+  .stats-loading { padding:3rem 1rem; text-align:center; font-size:0.55rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--smoke); }
+  .stats-empty { text-align:center; font-size:0.55rem; color:var(--smoke); padding:1.5rem 0; }
+
+  /* COMPLETE WORKOUT BUTTON */
+  .complete-btn-wrap { padding:0.75rem 1rem 0.5rem; }
+  .complete-btn { width:100%; background:var(--green-bg); border:1px solid var(--green); color:#5aba5a; font-family:'DM Mono',monospace; font-size:0.58rem; letter-spacing:0.12em; text-transform:uppercase; border-radius:8px; padding:0.7rem 1rem; cursor:pointer; transition:background 0.15s, border-color 0.15s; }
+  .complete-btn:active { background:rgba(58,138,58,0.3); }
+  .complete-btn.done { background:rgba(58,138,58,0.25); border-color:var(--green); color:#5aba5a; opacity:0.6; cursor:default; }
 </style>
 </head>
 <body>
@@ -231,6 +265,8 @@
 <div id="p-d5" class="page"></div>
 <!-- PRINCIPLES -->
 <div id="p-ref" class="page"></div>
+<!-- STATS -->
+<div id="p-stats" class="page"></div>
 
 </div>
 
@@ -239,8 +275,9 @@
   <button class="tab" onclick="showPage('d2',this)"><div class="tab-num">2</div><div class="tab-label">Pull</div></button>
   <button class="tab" onclick="showPage('d3',this)"><div class="tab-num">3</div><div class="tab-label">Legs</div></button>
   <button class="tab" onclick="showPage('d4',this)"><div class="tab-num">4</div><div class="tab-label">Upper</div></button>
-  <button class="tab" onclick="showPage('d5',this)"><div class="tab-num">5</div><div class="tab-label">Athletic</div></button>
-  <button class="tab" onclick="showPage('ref',this)"><div class="tab-icon">REF</div><div class="tab-label">Principles</div></button>
+  <button class="tab" onclick="showPage('d5',this)"><div class="tab-icon">ATH</div><div class="tab-label">Athletic</div></button>
+  <button class="tab" onclick="showPage('ref',this)"><div class="tab-icon">REF</div><div class="tab-label">Ref</div></button>
+  <button class="tab" onclick="showPage('stats',this)"><div class="tab-icon">↗</div><div class="tab-label">Stats</div></button>
 </nav>
 
 <script>
@@ -584,7 +621,24 @@ function renderDay(dayId) {
       });
     }
   });
+
+  // Complete Workout button
+  const alreadyDone = isWorkoutCompleted(dayId);
+  html += `<div class="complete-btn-wrap">
+    <button class="complete-btn${alreadyDone ? ' done' : ''}"
+            id="complete-btn-${dayId}"
+            onclick="completeWorkout('${dayId}',this)"
+            ${alreadyDone ? 'disabled' : ''}>
+      ${alreadyDone ? '✓ Workout Logged' : 'Complete Workout'}
+    </button>
+  </div>`;
+
   page.innerHTML = html;
+}
+
+function isWorkoutCompleted(dayId) {
+  const db = loadDB();
+  return !!(db.completedWorkouts && db.completedWorkouts[`${todayKey()}_${dayId}`]);
 }
 
 function toggleCard(topEl) {
@@ -751,10 +805,347 @@ function showPage(id, btn) {
   btn.classList.add('active');
   document.querySelector('.scroll-area').scrollTop = 0;
   currentPage = id;
-  // Show weekly summary on day pages only
-  document.getElementById('weeklySummary').style.display = id !== 'ref' ? 'block' : 'none';
+  const isDayPage = id !== 'ref' && id !== 'stats';
+  document.getElementById('weeklySummary').style.display = isDayPage ? 'block' : 'none';
+  if (id === 'stats') renderStats();
 }
 function toggleP(header) { header.parentElement.classList.toggle('open'); }
+
+// ===== COMPLETE WORKOUT =====
+async function completeWorkout(dayId, btn) {
+  if (btn.disabled) return;
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  const today = todayKey();
+  const db = loadDB();
+  const dayData = (db.sessions && db.sessions[today] && db.sessions[today][dayId]) || {};
+
+  const sets = [];
+  Object.entries(dayData).forEach(([exercise, setArr]) => {
+    (setArr || []).forEach((s, idx) => {
+      if (s) sets.push({ exercise, setIdx: idx, weight: s.weight || null, reps: s.reps || null, done: !!s.done });
+    });
+  });
+
+  const duration = sessionStart ? Math.floor((Date.now() - sessionStart) / 1000) : 0;
+
+  try {
+    const res = await fetch('/api/complete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date: today, day: dayId, sets, duration })
+    });
+    if (!res.ok) throw new Error('API ' + res.status);
+
+    if (sessionStart) endSession();
+
+    const db2 = loadDB();
+    if (!db2.completedWorkouts) db2.completedWorkouts = {};
+    db2.completedWorkouts[`${today}_${dayId}`] = true;
+    saveDB(db2);
+
+    btn.textContent = '✓ Workout Logged';
+    btn.classList.add('done');
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = 'Retry — Complete Workout';
+    console.warn('completeWorkout failed:', e);
+  }
+}
+
+// ===== MIDNIGHT AUTO-COMPLETE =====
+function scheduleAutoComplete() {
+  const now = new Date();
+  const midnight = new Date(now);
+  midnight.setHours(24, 0, 0, 0);
+  setTimeout(async () => {
+    await autoCompleteAll();
+    scheduleAutoComplete(); // reschedule for the next midnight
+  }, midnight - now);
+}
+
+async function autoCompleteAll() {
+  const today = todayKey();
+  const db = loadDB();
+  if (!db.sessions || !db.sessions[today]) return;
+
+  for (const dayId of Object.keys(DAYS)) {
+    const key = `${today}_${dayId}`;
+    if (db.completedWorkouts && db.completedWorkouts[key]) continue;
+
+    const dayData = db.sessions[today][dayId];
+    if (!dayData) continue;
+
+    const hasDone = Object.values(dayData).some(arr => (arr || []).some(s => s && s.done));
+    if (!hasDone) continue;
+
+    const sets = [];
+    Object.entries(dayData).forEach(([exercise, setArr]) => {
+      (setArr || []).forEach((s, idx) => {
+        if (s) sets.push({ exercise, setIdx: idx, weight: s.weight || null, reps: s.reps || null, done: !!s.done });
+      });
+    });
+
+    try {
+      await fetch('/api/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: today, day: dayId, sets, duration: 0 })
+      });
+      const db2 = loadDB();
+      if (!db2.completedWorkouts) db2.completedWorkouts = {};
+      db2.completedWorkouts[key] = true;
+      saveDB(db2);
+    } catch(e) {
+      console.warn('Auto-complete failed for', dayId, e);
+    }
+  }
+  if (sessionStart) endSession();
+}
+
+// ===== STATS PAGE =====
+async function renderStats() {
+  const page = document.getElementById('p-stats');
+  page.innerHTML = '<div class="stats-loading">Loading Stats...</div>';
+
+  try {
+    const res = await fetch('/api/stats');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const d = await res.json();
+
+    const ov = d.overview || {};
+    const streak = d.streak || { current: 0, best: 0 };
+    const totalTonnage = parseInt(ov.total_tonnage) || 0;
+    const tonnageDisplay = totalTonnage >= 1000
+      ? (totalTonnage / 1000).toFixed(1) + 'K'
+      : totalTonnage.toString();
+
+    let html = `
+      <div class="day-hero">
+        <div class="day-hero-tag">Iron Protocol</div>
+        <div class="day-hero-title">STATS</div>
+        <div class="day-hero-sub">Progress · Volume · PRs · Bodyweight</div>
+      </div>
+
+      <div class="stats-overview">
+        <div class="stat-big-card">
+          <div class="stat-big-value">${parseInt(ov.total_days) || 0}</div>
+          <div class="stat-big-label">Sessions</div>
+        </div>
+        <div class="stat-big-card">
+          <div class="stat-big-value">${(parseInt(ov.total_sets) || 0).toLocaleString()}</div>
+          <div class="stat-big-label">Sets Done</div>
+        </div>
+        <div class="stat-big-card">
+          <div class="stat-big-value">${tonnageDisplay}</div>
+          <div class="stat-big-label">Total Tonnage (lbs)</div>
+        </div>
+        <div class="stat-big-card gold-border">
+          <div class="stat-big-value">${streak.current}</div>
+          <div class="stat-big-label">Day Streak${streak.best > 1 ? ' · Best ' + streak.best : ''}</div>
+        </div>
+      </div>
+    `;
+
+    // Weekly volume chart
+    html += `
+      <div class="stats-chart-card">
+        <div class="stats-chart-title">Weekly Tonnage — Last 8 Weeks</div>
+        <canvas id="statsVolCanvas" class="stats-canvas"></canvas>
+      </div>
+    `;
+
+    // PRs
+    if (d.prs && d.prs.length > 0) {
+      const KEY_ORDER = [
+        'Barbell Flat Bench Press','Barbell Bent-Over Row','Back Squat','Romanian Deadlift',
+        'Barbell Curl','Seated DB Overhead Press','Lat Pulldown (Wide Overhand)','Deadlift'
+      ];
+      const sorted = [...d.prs].sort((a, b) => {
+        const ai = KEY_ORDER.indexOf(a.exercise_name), bi = KEY_ORDER.indexOf(b.exercise_name);
+        if (ai === -1 && bi === -1) return a.exercise_name.localeCompare(b.exercise_name);
+        if (ai === -1) return 1; if (bi === -1) return -1;
+        return ai - bi;
+      });
+      html += `<div class="block-label">Personal Records</div>
+        <div class="stats-chart-card" style="padding:0.75rem 1rem">
+          <ul class="pr-list">`;
+      sorted.forEach(pr => {
+        const repsNum = parseInt(pr.reps);
+        const repsStr = !isNaN(repsNum) ? `× ${repsNum} reps` : '';
+        html += `<li class="pr-item">
+          <div class="pr-name">${pr.exercise_name}</div>
+          <div class="pr-right">
+            <div class="pr-value">${parseFloat(pr.weight)} lbs ${repsStr}</div>
+            <div class="pr-date">${pr.date}</div>
+          </div>
+        </li>`;
+      });
+      html += `</ul></div>`;
+    }
+
+    // Bodyweight chart
+    if (d.bodyweight && d.bodyweight.length > 1) {
+      html += `
+        <div class="stats-chart-card">
+          <div class="stats-chart-title">Bodyweight Trend (lbs)</div>
+          <canvas id="statsBWCanvas" class="stats-canvas tall"></canvas>
+        </div>
+      `;
+    }
+
+    // Recent sessions
+    if (d.recentSessions && d.recentSessions.length > 0) {
+      html += `<div class="block-label">Recent Sessions</div>
+        <div class="stats-chart-card" style="padding:0.75rem 1rem">
+          <ul class="session-list">`;
+      d.recentSessions.forEach(s => {
+        const mins = parseInt(s.duration_seconds) > 0 ? Math.round(s.duration_seconds / 60) + ' min' : null;
+        const t = parseInt(s.tonnage) || 0;
+        html += `<li class="session-item">
+          <div class="session-date">${s.date}</div>
+          <div class="session-right">
+            <div class="session-sets">${s.sets} sets · ${t.toLocaleString()} lbs</div>
+            ${mins ? `<div class="session-dur">${mins}</div>` : ''}
+          </div>
+        </li>`;
+      });
+      html += `</ul></div>`;
+    }
+
+    html += '<div style="height:1rem"></div>';
+    page.innerHTML = html;
+
+    // Draw charts after DOM is painted
+    requestAnimationFrame(() => {
+      if (d.weeklyVolume) drawVolumeBarChart('statsVolCanvas', d.weeklyVolume);
+      if (d.bodyweight && d.bodyweight.length > 1) drawStatsBWChart('statsBWCanvas', d.bodyweight);
+    });
+
+  } catch(e) {
+    page.innerHTML = `<div class="stats-loading">Failed to load stats.<br><span style="color:var(--red);font-size:0.5rem">${e.message}</span></div>`;
+    console.error('renderStats:', e);
+  }
+}
+
+function drawVolumeBarChart(canvasId, weeklyData) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth, H = canvas.offsetHeight;
+  canvas.width = W * 2; canvas.height = H * 2;
+  ctx.scale(2, 2);
+
+  if (!weeklyData || weeklyData.length === 0) {
+    ctx.fillStyle = '#555'; ctx.font = '11px DM Mono'; ctx.textAlign = 'center';
+    ctx.fillText('No data yet — complete some workouts!', W / 2, H / 2);
+    return;
+  }
+
+  const values = weeklyData.map(d => parseInt(d.tonnage) || 0);
+  const maxVal = Math.max(...values, 1);
+  const pad = { t: 12, b: 28, l: 8, r: 8 };
+  const cw = W - pad.l - pad.r, ch = H - pad.t - pad.b;
+  const n = weeklyData.length;
+  const slotW = cw / n;
+  const barW = slotW * 0.6;
+  const gapL = slotW * 0.2;
+
+  weeklyData.forEach((d, i) => {
+    const x = pad.l + slotW * i + gapL;
+    const barH = Math.max((values[i] / maxVal) * ch, values[i] > 0 ? 2 : 0);
+    const y = pad.t + ch - barH;
+
+    // Track background
+    ctx.fillStyle = 'rgba(255,255,255,0.03)';
+    ctx.fillRect(x, pad.t, barW, ch);
+
+    // Bar
+    ctx.fillStyle = i === n - 1 ? '#c9a84c' : 'rgba(201,168,76,0.45)';
+    ctx.fillRect(x, y, barW, barH);
+
+    // Week label (M/D)
+    const parts = d.week_start.split('-');
+    const label = parseInt(parts[1]) + '/' + parseInt(parts[2]);
+    ctx.fillStyle = '#555'; ctx.font = '8px DM Mono'; ctx.textAlign = 'center';
+    ctx.fillText(label, x + barW / 2, pad.t + ch + 18);
+
+    // Value inside bar if tall enough
+    if (barH > 14 && values[i] > 0) {
+      const kVal = values[i] >= 1000 ? Math.round(values[i] / 1000) + 'K' : values[i];
+      ctx.fillStyle = '#090909'; ctx.font = 'bold 7px DM Mono'; ctx.textAlign = 'center';
+      ctx.fillText(kVal, x + barW / 2, y + barH - 4);
+    }
+  });
+}
+
+function drawStatsBWChart(canvasId, bwData) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const data = bwData.filter(d => d.weight > 0);
+  const W = canvas.offsetWidth, H = canvas.offsetHeight;
+  canvas.width = W * 2; canvas.height = H * 2;
+  ctx.scale(2, 2);
+
+  if (data.length < 2) {
+    ctx.fillStyle = '#555'; ctx.font = '11px DM Mono'; ctx.textAlign = 'center';
+    ctx.fillText('Need 2+ entries to show chart', W / 2, H / 2); return;
+  }
+
+  const weights = data.map(d => d.weight);
+  const mn = Math.min(...weights) - 3, mx = Math.max(...weights) + 3;
+  const pad = { t: 18, b: 20, l: 42, r: 12 };
+  const cw = W - pad.l - pad.r, ch = H - pad.t - pad.b;
+  const n = data.length;
+  const xOf = i => pad.l + (cw / (n - 1)) * i;
+  const yOf = w => pad.t + ch - ((w - mn) / (mx - mn)) * ch;
+
+  // Grid
+  for (let i = 0; i <= 4; i++) {
+    const gy = pad.t + (ch / 4) * i;
+    const gv = Math.round(mx - (mx - mn) * i / 4);
+    ctx.strokeStyle = '#2a2a2a'; ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(pad.l, gy); ctx.lineTo(W - pad.r, gy); ctx.stroke();
+    ctx.fillStyle = '#555'; ctx.font = '9px DM Mono'; ctx.textAlign = 'right';
+    ctx.fillText(gv, pad.l - 5, gy + 3);
+  }
+
+  // Trend line (linear regression)
+  const xm = (n - 1) / 2, ym = weights.reduce((a, b) => a + b, 0) / n;
+  let num = 0, den = 0;
+  weights.forEach((w, i) => { num += (i - xm) * (w - ym); den += (i - xm) ** 2; });
+  const slope = den ? num / den : 0;
+  ctx.strokeStyle = 'rgba(201,168,76,0.2)'; ctx.lineWidth = 1.5;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(pad.l, yOf(slope * 0 + (ym - slope * xm)));
+  ctx.lineTo(W - pad.r, yOf(slope * (n - 1) + (ym - slope * xm)));
+  ctx.stroke(); ctx.setLineDash([]);
+
+  // Fill area under line
+  ctx.beginPath();
+  data.forEach((d, i) => { i === 0 ? ctx.moveTo(xOf(i), yOf(d.weight)) : ctx.lineTo(xOf(i), yOf(d.weight)); });
+  ctx.lineTo(xOf(n - 1), pad.t + ch); ctx.lineTo(pad.l, pad.t + ch); ctx.closePath();
+  ctx.fillStyle = 'rgba(201,168,76,0.06)'; ctx.fill();
+
+  // Line
+  ctx.strokeStyle = '#c9a84c'; ctx.lineWidth = 2; ctx.beginPath();
+  data.forEach((d, i) => { i === 0 ? ctx.moveTo(xOf(i), yOf(d.weight)) : ctx.lineTo(xOf(i), yOf(d.weight)); });
+  ctx.stroke();
+
+  // Dots (first, last, min, max)
+  const special = new Set([0, n - 1, weights.indexOf(Math.min(...weights)), weights.indexOf(Math.max(...weights))]);
+  data.forEach((d, i) => {
+    if (!special.has(i)) return;
+    ctx.beginPath(); ctx.arc(xOf(i), yOf(d.weight), 3, 0, Math.PI * 2);
+    ctx.fillStyle = '#c9a84c'; ctx.fill();
+    ctx.fillStyle = '#c9a84c'; ctx.font = 'bold 9px DM Mono';
+    ctx.textAlign = i === 0 ? 'left' : i === n - 1 ? 'right' : 'center';
+    ctx.fillText(d.weight, xOf(i) + (i === 0 ? 4 : i === n - 1 ? -4 : 0), yOf(d.weight) - 6);
+  });
+}
 
 // ===== API SYNC =====
 async function initFromAPI() {
@@ -793,6 +1184,7 @@ updateWeeklySummary();
 document.getElementById('weeklySummary').style.display = 'block';
 document.getElementById('sessionBar').classList.add('active');
 initFromAPI(); // async — re-renders once server data arrives
+scheduleAutoComplete(); // fires at midnight if user hasn't tapped Complete Workout
 
 // ===== PWA =====
 if ('serviceWorker' in navigator) {
