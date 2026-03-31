@@ -35,7 +35,7 @@ export default async function handler(req) {
         (workout_date, day_key, exercise_name, set_index, weight, reps, done, updated_at)
       VALUES
         (${date}, ${day}, ${s.exercise}, ${s.setIdx},
-         ${s.weight || null}, ${s.reps || null}, ${s.done ?? false}, NOW())
+         ${s.weight || null}, ${s.reps || null}, ${s.done || !!(s.weight || s.reps)}, NOW())
       ON CONFLICT (workout_date, day_key, exercise_name, set_index)
       DO UPDATE SET
         weight     = EXCLUDED.weight,

@@ -1068,7 +1068,7 @@ async function completeWorkout(dayId, btn) {
   const sets = [];
   Object.entries(dayData).forEach(([exercise, setArr]) => {
     (setArr || []).forEach((s, idx) => {
-      if (s) sets.push({ exercise, setIdx: idx, weight: s.weight || null, reps: s.reps || null, done: !!s.done });
+      if (s) sets.push({ exercise, setIdx: idx, weight: s.weight || null, reps: s.reps || null, done: !!(s.done || s.weight || s.reps) });
     });
   });
 
@@ -1130,7 +1130,7 @@ async function autoCompleteAll() {
     const sets = [];
     Object.entries(dayData).forEach(([exercise, setArr]) => {
       (setArr || []).forEach((s, idx) => {
-        if (s) sets.push({ exercise, setIdx: idx, weight: s.weight || null, reps: s.reps || null, done: !!s.done });
+        if (s) sets.push({ exercise, setIdx: idx, weight: s.weight || null, reps: s.reps || null, done: !!(s.done || s.weight || s.reps) });
       });
     });
 
