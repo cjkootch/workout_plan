@@ -88,7 +88,11 @@
   .ss-badge { display:inline-block; font-size:0.43rem; letter-spacing:0.08em; background:rgba(201,168,76,0.15); color:var(--gold); padding:0.1rem 0.3rem; border-radius:3px; text-transform:uppercase; margin-left:0.35rem; vertical-align:middle; }
 
   /* SET LOGGING */
-  .set-log-area { padding:0.5rem 1rem 0.75rem; border-top:1px solid var(--border); }
+  .set-log-area { padding:0; max-height:0; overflow:hidden; border-top:1px solid transparent; transition:max-height 0.3s ease, padding 0.3s ease, border-color 0.2s; }
+  .ex-card.expanded .set-log-area { padding:0.5rem 1rem 0.75rem; max-height:500px; border-top-color:var(--border); }
+  .ex-card-top { cursor:pointer; }
+  .ex-expand-hint { font-size:0.45rem; color:var(--smoke); letter-spacing:0.08em; text-transform:uppercase; margin-top:0.2rem; transition:opacity 0.2s; }
+  .ex-card.expanded .ex-expand-hint { opacity:0; }
   .set-row { display:flex; align-items:center; gap:0.5rem; padding:0.35rem 0; border-bottom:1px solid rgba(42,42,42,0.5); }
   .set-row:last-child { border-bottom:none; }
   .set-num { font-size:0.5rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--smoke); width:2.5rem; flex-shrink:0; }
@@ -511,8 +515,9 @@ function renderDay(dayId) {
         const today = getSessionData(dayId, ex.name);
         const allDone = today && today.length >= ex.sets && today.every(s => s && s.done);
 
-        html += `<div class="ex-card${allDone ? ' all-done' : ''}">`;
-        html += `<div class="ex-card-top"><div class="ex-left">`;
+        const hasData = today && today.some(s => s && (s.weight || s.reps || s.done));
+        html += `<div class="ex-card${allDone ? ' all-done' : ''}${hasData ? ' expanded' : ''}">`;
+        html += `<div class="ex-card-top" onclick="toggleCard(this)"><div class="ex-left">`;
         html += `<div class="ex-name">${ex.name}${ex.ss ? `<span class="ss-badge">${ex.ss}</span>` : ''}</div>`;
         html += `<div class="ex-note">${ex.note}</div>`;
         if (last) {
@@ -523,6 +528,7 @@ function renderDay(dayId) {
             html += `<div class="ex-last-session">Last (${last.date}): ${maxW ? maxW + ' lbs' : ''} × ${lastSets.length} sets</div>`;
           }
         }
+        html += `<div class="ex-expand-hint">tap to log</div>`;
         html += `</div><div class="ex-badges"><div class="ex-badge sets">${ex.sets} sets</div><div class="ex-badge reps">${ex.reps} reps</div></div></div>`;
 
         html += `<div class="ex-meta-strip">`;
@@ -550,6 +556,11 @@ function renderDay(dayId) {
     }
   });
   page.innerHTML = html;
+}
+
+function toggleCard(topEl) {
+  const card = topEl.closest('.ex-card');
+  card.classList.toggle('expanded');
 }
 
 function logSet(day, exName, idx, input) {
