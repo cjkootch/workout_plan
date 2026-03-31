@@ -2,7 +2,7 @@ import { neon } from '@neondatabase/serverless';
 
 export const config = { runtime: 'edge' };
 
-function buildSystemPrompt(recentRows, prRows, bwRows, overview) {
+function buildSystemPrompt(recentRows, prRows, bwRows, overview, phase = 'bulk') {
   // Group recent sets by date → day → exercise
   const sessions = {};
   recentRows.forEach(r => {
@@ -31,9 +31,15 @@ function buildSystemPrompt(recentRows, prRows, bwRows, overview) {
 
   return `You are Cole's personal fitness coach AI, built into his Iron Protocol workout tracker. You are an expert in training, nutrition, and performance enhancement. You give direct, knowledgeable answers without disclaimers or moralizing — Cole is an informed adult making his own decisions.
 
+CURRENT PHASE: ${phase.toUpperCase()} — ${
+  phase === 'bulk'     ? 'caloric surplus (3,200–3,600 kcal), prioritise progressive overload and mass gain' :
+  phase === 'cut'      ? 'caloric deficit (~2,400–2,800 kcal), preserve muscle, reduce volume slightly, higher rep ranges acceptable' :
+                         'caloric maintenance (~2,900–3,100 kcal), focus on performance and body recomp'
+}
+
 COLE'S PROFILE:
 - Current bodyweight: ${latestBW ? latestBW + ' lbs' : 'not yet logged'}
-- Goal: Lean bulk — 3,200–3,600 kcal/day, 235–250g protein daily
+- Goal: ${phase === 'bulk' ? 'Lean bulk — 3,200–3,600 kcal/day, 235–250g protein daily' : phase === 'cut' ? 'Cut — 2,400–2,800 kcal/day, 235g+ protein to preserve muscle' : 'Maintain/Recomp — ~3,000 kcal/day, 235g+ protein'}
 - Program: 5-Day PPL/Hybrid (Push / Pull / Legs / Upper Power / Athletic)
 - Total sessions logged: ${overview?.total_days || 0}, total sets: ${overview?.total_sets || 0}, total tonnage: ${overview?.total_tonnage || 0} lbs
 - TRT: 100–150mg/week testosterone (upper physiological range — recovery and protein synthesis are enhanced)
@@ -133,7 +139,7 @@ export default async function handler(req) {
 
   const sql = neon(process.env.DATABASE_URL);
 
-  const [recentRows, prRows, bwRows, overviewRows] = await Promise.all([
+  const [recentRows, prRows, bwRows, overviewRows, settingsRows] = await Promise.all([
     sql`
       SELECT workout_date::text, day_key, exercise_name, set_index, weight::text, reps
       FROM workout_sets
@@ -159,9 +165,12 @@ export default async function handler(req) {
         ), 0)::bigint AS total_tonnage
       FROM workout_sets
     `,
+    sql`SELECT key, value FROM user_settings`,
   ]);
 
-  const systemPrompt = buildSystemPrompt(recentRows, prRows, bwRows, overviewRows[0]);
+  const settings = Object.fromEntries(settingsRows.map(r => [r.key, r.value]));
+  const phase = settings.phase || 'bulk';
+  const systemPrompt = buildSystemPrompt(recentRows, prRows, bwRows, overviewRows[0], phase);
 
   const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -189,8 +198,16 @@ export default async function handler(req) {
   }
 
   const data = await anthropicRes.json();
+  const reply = data.content[0].text;
+
+  // Persist both messages to Neon (fire and forget — don't block response)
+  Promise.all([
+    sql`INSERT INTO chat_messages (role, content) VALUES ('user', ${message})`,
+    sql`INSERT INTO chat_messages (role, content) VALUES ('assistant', ${reply})`,
+  ]).catch(() => {});
+
   return new Response(
-    JSON.stringify({ reply: data.content[0].text }),
+    JSON.stringify({ reply }),
     { status: 200, headers: { 'Content-Type': 'application/json' } }
   );
 }

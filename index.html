@@ -207,6 +207,20 @@
   .complete-btn:active { background:rgba(39,111,55,0.16); }
   .complete-btn.done { opacity:0.55; cursor:default; }
 
+  /* PHASE SELECTOR */
+  .phase-selector { display:flex; gap:0; background:var(--bg); border:1.5px solid var(--border-strong); border-radius:10px; overflow:hidden; margin-bottom:1rem; }
+  .phase-btn { flex:1; background:none; border:none; font-family:inherit; font-size:0.72rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); padding:0.65rem 0.25rem; cursor:pointer; transition:all 0.15s; }
+  .phase-btn.active { background:var(--gold); color:#fff; font-weight:500; }
+  .phase-btn:not(.active):active { background:var(--gold-bg); }
+
+  /* INSIGHT CARD */
+  .insight-card { background:var(--surface); border:1px solid var(--gold-border); border-radius:12px; padding:1rem 1.1rem; margin-bottom:1rem; box-shadow:0 1px 4px rgba(0,0,0,0.06); }
+  .insight-header { display:flex; align-items:center; gap:0.5rem; margin-bottom:0.6rem; }
+  .insight-icon { font-size:0.9rem; }
+  .insight-title { font-size:0.62rem; letter-spacing:0.13em; text-transform:uppercase; color:var(--gold); font-weight:500; }
+  .insight-body { font-size:0.82rem; color:var(--secondary); line-height:1.7; }
+  .insight-loading { color:var(--muted); font-style:italic; font-size:0.82rem; }
+
   /* COACH / CHAT */
   #p-coach.active { display:flex; flex-direction:column; height:100%; padding:0; overflow:hidden; }
   .chat-messages { flex:1; overflow-y:auto; padding:1rem 1.1rem; display:flex; flex-direction:column; gap:0.8rem; -webkit-overflow-scrolling:touch; }
@@ -958,11 +972,23 @@ async function renderStats() {
       ? (totalTonnage / 1000).toFixed(1) + 'K'
       : totalTonnage.toString();
 
+    const currentPhase = window._phase || 'bulk';
     let html = `
       <div class="day-hero">
         <div class="day-hero-tag">Iron Protocol</div>
         <div class="day-hero-title">STATS</div>
         <div class="day-hero-sub">Progress · Volume · PRs · Bodyweight</div>
+      </div>
+
+      <div class="phase-selector">
+        <button class="phase-btn${currentPhase==='cut'?' active':''}" onclick="setPhase('cut',this)">Cut</button>
+        <button class="phase-btn${currentPhase==='maintain'?' active':''}" onclick="setPhase('maintain',this)">Maintain</button>
+        <button class="phase-btn${currentPhase==='bulk'?' active':''}" onclick="setPhase('bulk',this)">Bulk</button>
+      </div>
+
+      <div class="insight-card" id="insightCard">
+        <div class="insight-header"><span class="insight-icon">🤖</span><span class="insight-title">Coach Insight</span></div>
+        <div class="insight-body insight-loading" id="insightBody">Analyzing your data…</div>
       </div>
 
       <div class="stats-overview">
@@ -1059,6 +1085,10 @@ async function renderStats() {
       if (d.weeklyVolume) drawVolumeBarChart('statsVolCanvas', d.weeklyVolume);
       if (d.bodyweight && d.bodyweight.length > 1) drawStatsBWChart('statsBWCanvas', d.bodyweight);
     });
+
+    // Load AI insight (resets cache on each stats open so it stays fresh)
+    _insightCache = null;
+    loadInsight();
 
   } catch(e) {
     page.innerHTML = `<div class="stats-loading">Failed to load stats.<br><span style="color:var(--red);font-size:0.5rem">${e.message}</span></div>`;
@@ -1222,16 +1252,61 @@ document.getElementById('weeklySummary').style.display = 'block';
 document.getElementById('sessionBar').classList.add('active');
 initFromAPI(); // async — re-renders once server data arrives
 scheduleAutoComplete(); // fires at midnight if user hasn't tapped Complete Workout
+loadPhase(); // sync phase from Neon on startup
 
 // ===== PWA =====
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 
+// ===== PHASE =====
+window._phase = 'bulk';
+
+async function loadPhase() {
+  try {
+    const res = await fetch('/api/settings');
+    const data = await res.json();
+    window._phase = data.phase || 'bulk';
+  } catch {}
+}
+
+async function setPhase(phase, btn) {
+  window._phase = phase;
+  document.querySelectorAll('.phase-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  try {
+    await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: 'phase', value: phase }),
+    });
+  } catch {}
+}
+
+// ===== INSIGHT =====
+let _insightCache = null;
+
+async function loadInsight() {
+  if (_insightCache) {
+    const el = document.getElementById('insightBody');
+    if (el) { el.classList.remove('insight-loading'); el.innerHTML = _insightCache; }
+    return;
+  }
+  try {
+    const res = await fetch('/api/insight');
+    const data = await res.json();
+    _insightCache = data.insight ? formatChatReply(data.insight) : 'No data yet — complete some sessions first.';
+  } catch {
+    _insightCache = 'Could not load insight.';
+  }
+  const el = document.getElementById('insightBody');
+  if (el) { el.classList.remove('insight-loading'); el.innerHTML = _insightCache; }
+}
+
 // ===== COACH =====
 let chatHistory = [];
 
-function renderCoach() {
+async function renderCoach() {
   const page = document.getElementById('p-coach');
   if (page.querySelector('.chat-messages')) return; // already built
   page.innerHTML = `
@@ -1257,6 +1332,27 @@ function renderCoach() {
         <button class="chat-send" id="chatSend" onclick="sendChatMessage()">Send</button>
       </div>
     </div>`;
+
+  // Load persisted history
+  try {
+    const res = await fetch('/api/chat-history');
+    const data = await res.json();
+    if (data.messages && data.messages.length) {
+      const msgs = document.getElementById('chatMessages');
+      msgs.querySelector('.chat-empty')?.remove();
+      data.messages.forEach(m => {
+        chatHistory.push({ role: m.role, content: m.content });
+        if (m.role === 'user') {
+          msgs.insertAdjacentHTML('beforeend',
+            `<div class="chat-msg user"><div class="chat-bubble">${escapeHtml(m.content).replace(/\n/g,'<br>')}</div></div>`);
+        } else {
+          msgs.insertAdjacentHTML('beforeend',
+            `<div class="chat-msg ai"><div class="chat-bubble">${formatChatReply(m.content)}</div></div>`);
+        }
+      });
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+  } catch {}
 }
 
 function chatSuggest(btn) {
