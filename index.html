@@ -901,7 +901,10 @@ function renderPrinciples() {
     html += `<ul class="principle-list">${p.list.map(l => `<li>${l}</li>`).join('')}</ul></div></div>`;
   });
 
-  html += `<div class="block-label">Supplement Stack</div>`;
+  html += `<div class="block-label">Current Stack</div>`;
+  html += `<div id="currentStackSection"><div class="brief-loading" style="padding:0.75rem 1.1rem">Loading stack…</div></div>`;
+
+  html += `<div class="block-label">Base Supplements</div>`;
   html += `<table class="data-table"><thead><tr><th>Supplement</th><th>Dose</th><th>Timing</th></tr></thead><tbody>`;
   [['Creatine Monohydrate','5g','Daily'],['Whey Protein','As needed','Post-session'],['Magnesium Glycinate','400mg','Before bed'],['Vitamin D3 + K2','5,000 IU','With meal'],['Omega-3 Fish Oil','3g EPA/DHA','With meals'],['Caffeine (optional)','150–200mg','Pre-session']].forEach(r => {
     html += `<tr><td>${r[0]}</td><td class="gold">${r[1]}</td><td>${r[2]}</td></tr>`;
@@ -917,6 +920,45 @@ function renderPrinciples() {
   page.innerHTML = html;
   renderBWChart();
   renderBWEntries();
+}
+
+async function loadStackDisplay() {
+  const el = document.getElementById('currentStackSection');
+  if (!el) return;
+  try {
+    const res  = await fetch('/api/settings');
+    const data = await res.json();
+
+    // Parse stack
+    let stack = [];
+    try { stack = JSON.parse(data.stack || '[]'); } catch {}
+
+    // Always prepend TRT as the base entry
+    const trtDose = data.trt_dose || '100–150mg/week';
+    const trtEntry = { compound: 'Testosterone (TRT)', dose: trtDose, notes: 'base — always on' };
+
+    const fullStack = [trtEntry, ...stack.filter(s => s.compound.toLowerCase() !== 'trt' && s.compound.toLowerCase() !== 'testosterone')];
+
+    if (fullStack.length === 0) {
+      el.innerHTML = `<div style="padding:0.6rem 1.1rem;color:var(--muted);font-size:0.8rem;font-style:italic">No compounds logged yet — tell the Coach what you're running.</div>`;
+      return;
+    }
+
+    let html = `<table class="data-table"><thead><tr><th>Compound</th><th>Dose</th><th>Since</th><th>Notes</th></tr></thead><tbody>`;
+    fullStack.forEach(s => {
+      html += `<tr>
+        <td><strong>${escapeHtml(s.compound)}</strong></td>
+        <td class="gold">${escapeHtml(s.dose || '—')}</td>
+        <td style="white-space:nowrap">${s.since || '—'}</td>
+        <td style="color:var(--muted);font-size:0.75rem">${escapeHtml(s.notes || '')}</td>
+      </tr>`;
+    });
+    html += `</tbody></table>`;
+    html += `<div style="padding:0.35rem 1.1rem 0.6rem;font-size:0.72rem;color:var(--muted)">Tell the Coach to add, change, or remove anything.</div>`;
+    el.innerHTML = html;
+  } catch {
+    el.innerHTML = `<div style="padding:0.6rem 1.1rem;color:var(--muted);font-size:0.8rem;font-style:italic">Couldn't load stack.</div>`;
+  }
 }
 
 function logBodyweight() {
@@ -1003,6 +1045,7 @@ function showPage(id, btn) {
   document.getElementById('weeklySummary').style.display = isDayPage ? 'block' : 'none';
   if (id === 'stats') renderStats();
   if (id === 'coach') renderCoach();
+  if (id === 'ref') loadStackDisplay();
 }
 function toggleP(header) { header.parentElement.classList.toggle('open'); }
 
@@ -1385,6 +1428,7 @@ async function initFromAPI() {
     // Re-render with server data
     Object.keys(DAYS).forEach(d => renderDay(d));
     renderPrinciples();
+    loadStackDisplay();
     updateWeeklySummary();
   } catch(e) {
     console.warn('Neon sync failed — running from local cache:', e);
@@ -1394,6 +1438,7 @@ async function initFromAPI() {
 // ===== INIT =====
 Object.keys(DAYS).forEach(d => renderDay(d));
 renderPrinciples();
+loadStackDisplay();
 updateWeeklySummary();
 document.getElementById('weeklySummary').style.display = 'block';
 document.getElementById('sessionBar').classList.add('active');
