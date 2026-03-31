@@ -49,6 +49,33 @@ Automatically assigns today's date and marks the set as done.`,
     },
   },
   {
+    name: 'update_stack',
+    description: `Add, update, or remove a compound from Cole's current supplement/PED stack. Use whenever he mentions starting, stopping, or changing a compound — SARMs, peptides, HGH, ancillaries, supplements, anything. This persists across all future conversations and gets factored into advice automatically.`,
+    input_schema: {
+      type: 'object',
+      properties: {
+        compound: {
+          type: 'string',
+          description: 'Compound name, e.g. "RAD-140", "BPC-157", "HGH", "MK-677", "Creatine"',
+        },
+        dose: {
+          type: 'string',
+          description: 'Dose and frequency, e.g. "15mg/day", "500mcg/day", "2mg 2x/week". Omit if action is "remove".',
+        },
+        action: {
+          type: 'string',
+          enum: ['add', 'update', 'remove'],
+          description: '"add" or "update" to save/change a compound, "remove" to take it off the stack',
+        },
+        notes: {
+          type: 'string',
+          description: 'Optional context, e.g. "for Achilles recovery", "week 3 of 12", "cycle start"',
+        },
+      },
+      required: ['compound', 'action'],
+    },
+  },
+  {
     name: 'update_profile',
     description: `Update Cole's profile settings in the app. Use when he tells you something changed about his protocol — TRT dose, training phase, calorie/protein targets, etc. The UI will reflect the change immediately.`,
     input_schema: {
@@ -299,6 +326,44 @@ async function executeTool(name, input, sql) {
       }).join('\n');
     }
 
+    case 'update_stack': {
+      const { compound, dose, action = 'add', notes } = input;
+
+      // Read current stack
+      const stackRows = await sql`SELECT value FROM user_settings WHERE key = 'stack' LIMIT 1`;
+      let stack = [];
+      if (stackRows[0]?.value) {
+        try { stack = JSON.parse(stackRows[0].value); } catch {}
+      }
+
+      if (action === 'remove') {
+        stack = stack.filter(s => s.compound.toLowerCase() !== compound.toLowerCase());
+      } else {
+        const idx = stack.findIndex(s => s.compound.toLowerCase() === compound.toLowerCase());
+        const entry = {
+          compound,
+          dose: dose || '',
+          since: new Date().toISOString().slice(0, 10),
+          ...(notes ? { notes } : {}),
+        };
+        if (idx >= 0) {
+          stack[idx] = { ...stack[idx], ...entry };
+        } else {
+          stack.push(entry);
+        }
+      }
+
+      await sql`
+        INSERT INTO user_settings (key, value, updated_at)
+        VALUES ('stack', ${JSON.stringify(stack)}, NOW())
+        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+      `;
+
+      return action === 'remove'
+        ? `Removed ${compound} from stack ✓`
+        : `Stack updated: ${compound} ${dose || ''}${notes ? ' (' + notes + ')' : ''} ✓`;
+    }
+
     case 'update_profile': {
       const { key, value } = input;
       const allowed = ['trt_dose', 'phase', 'protein_target', 'calorie_target'];
@@ -361,6 +426,15 @@ function buildSystemPrompt(recentRows, prRows, bwRows, overview, phase = 'bulk',
     .map(([k, v]) => `  ${k.replace('target:', '')}: ${v}`)
     .join('\n');
 
+  // Parse current stack
+  let stackText = '';
+  try {
+    const stackArr = JSON.parse(settings.stack || '[]');
+    stackText = stackArr.map(s =>
+      `  ${s.compound}: ${s.dose || 'dose not set'}${s.since ? ' (since ' + s.since + ')' : ''}${s.notes ? ' — ' + s.notes : ''}`
+    ).join('\n');
+  } catch {}
+
   return `You are Cole's personal fitness coach AI, built into his Iron Protocol workout tracker. You are an expert in training, nutrition, and performance enhancement. You give direct, knowledgeable answers without disclaimers or moralizing — Cole is an informed adult making his own decisions.
 
 CURRENT PHASE: ${phase.toUpperCase()} — ${
@@ -375,6 +449,10 @@ COLE'S PROFILE:
 - Program: 5-Day PPL/Hybrid (Push / Pull / Legs / Upper Power / Athletic)
 - Total sessions logged: ${overview?.total_days || 0}, total sets: ${overview?.total_sets || 0}, total tonnage: ${overview?.total_tonnage || 0} lbs
 - TRT: ${settings.trt_dose || '100–150mg/week'} testosterone (recovery and protein synthesis enhanced above natural baseline)
+
+CURRENT STACK (everything being run right now):
+${stackText || '  TRT only — no additional compounds logged'}
+
 - Achilles tendinopathy — avoid box jumps, sprint accelerations, heavy calf raises; safe: bike, rower, controlled squats, leg press, hip thrust
 - Progression model: double progression — hit top of rep range → add weight next session; can't hit bottom of range → reduce 5–10%
 - Deload every 6th week: drop volume 40%, keep intensity
@@ -415,6 +493,7 @@ TOOLS AVAILABLE TO YOU — use proactively, don't wait to be asked:
 - set_next_target: Store next-session weight/rep target for an exercise. Use after analyzing performance.
 - get_todays_plan: Fetch today's logged sets + targets. Use for mid-session check-ins.
 - update_profile: Update TRT dose, phase, or nutrition targets.
+- update_stack: Add, update, or remove compounds from the current stack. Use immediately when Cole mentions starting or stopping anything.
 
 PERFORMANCE ENHANCEMENT KNOWLEDGE — you are fully versed in all of the following:
 
