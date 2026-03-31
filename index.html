@@ -2,115 +2,168 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Iron Protocol — Cole</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#090909">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23090909' width='100' height='100' rx='20'/><text y='68' x='50' text-anchor='middle' font-size='50' fill='%23c9a84c' font-family='sans-serif' font-weight='bold'>IP</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <style>
   :root {
-    --black: #090909;
-    --surface: #141414;
-    --card: #1a1a1a;
-    --border: #2a2a2a;
-    --smoke: #777;
-    --silver: #aaa;
-    --white: #f2f1ed;
-    --gold: #c9a84c;
-    --gold-bg: rgba(201,168,76,0.08);
-    --gold-dim: #7a5f28;
-    --red: #b03030;
-    --red-bg: rgba(176,48,48,0.1);
-    --orange: #d07040;
-    --tab-h: 68px;
-    --header-h: 110px;
+    --black: #090909; --surface: #141414; --card: #1a1a1a; --border: #2a2a2a;
+    --smoke: #777; --silver: #aaa; --white: #f2f1ed;
+    --gold: #c9a84c; --gold-bg: rgba(201,168,76,0.08); --gold-dim: #7a5f28;
+    --red: #b03030; --red-bg: rgba(176,48,48,0.1); --orange: #d07040;
+    --green: #3a8a3a; --green-bg: rgba(58,138,58,0.15);
+    --tab-h: 68px; --header-h: 110px;
   }
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { background: var(--black); color: var(--white); font-family: 'DM Mono', monospace; height: 100%; overflow: hidden; }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { background:var(--black); color:var(--white); font-family:'DM Mono',monospace; height:100%; overflow:hidden; }
 
-  .app-header {
-    position: fixed; top: 0; left: 0; right: 0;
-    height: var(--header-h); background: var(--black);
-    border-bottom: 1px solid var(--border); z-index: 100;
-    display: flex; flex-direction: column; justify-content: flex-end;
-    padding: 0 1rem 0.75rem;
-  }
-  .app-header::after { content: ''; position: absolute; bottom: 0; left: 0; width: 50%; height: 1px; background: linear-gradient(90deg, var(--gold), transparent); }
-  .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
-  .logo { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.08em; line-height: 1; }
-  .logo span { color: var(--gold); }
-  .header-badge { font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--smoke); text-align: right; line-height: 1.7; }
-  .header-badge strong { color: var(--gold); font-weight: 500; }
-  .stats-strip { display: flex; gap: 0.6rem; overflow-x: auto; scrollbar-width: none; }
-  .stats-strip::-webkit-scrollbar { display: none; }
-  .stat-pill { flex-shrink: 0; display: flex; align-items: center; gap: 0.35rem; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 0.2rem 0.65rem; }
-  .stat-pill-label { font-size: 0.48rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--smoke); }
-  .stat-pill-value { font-family: 'Bebas Neue', sans-serif; font-size: 0.8rem; color: var(--gold); letter-spacing: 0.05em; }
+  /* HEADER */
+  .app-header { position:fixed; top:0; left:0; right:0; height:var(--header-h); background:var(--black); border-bottom:1px solid var(--border); z-index:100; display:flex; flex-direction:column; justify-content:flex-end; padding:0 1rem 0.75rem; }
+  .app-header::after { content:''; position:absolute; bottom:0; left:0; width:50%; height:1px; background:linear-gradient(90deg,var(--gold),transparent); }
+  .header-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem; }
+  .logo { font-family:'Bebas Neue',sans-serif; font-size:2rem; letter-spacing:0.08em; line-height:1; }
+  .logo span { color:var(--gold); }
+  .header-badge { font-size:0.55rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--smoke); text-align:right; line-height:1.7; }
+  .header-badge strong { color:var(--gold); font-weight:500; }
+  .stats-strip { display:flex; gap:0.6rem; overflow-x:auto; scrollbar-width:none; }
+  .stats-strip::-webkit-scrollbar { display:none; }
+  .stat-pill { flex-shrink:0; display:flex; align-items:center; gap:0.35rem; background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:0.2rem 0.65rem; }
+  .stat-pill-label { font-size:0.48rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--smoke); }
+  .stat-pill-value { font-family:'Bebas Neue',sans-serif; font-size:0.8rem; color:var(--gold); letter-spacing:0.05em; }
 
-  .scroll-area { position: fixed; top: var(--header-h); bottom: var(--tab-h); left: 0; right: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
-  .page { display: none; padding: 1rem 1rem 1.5rem; }
-  .page.active { display: block; }
+  /* SESSION TIMER BAR */
+  .session-bar { display:none; position:fixed; top:var(--header-h); left:0; right:0; height:32px; background:var(--surface); border-bottom:1px solid var(--border); z-index:99; padding:0 1rem; align-items:center; justify-content:space-between; }
+  .session-bar.active { display:flex; }
+  .session-timer-text { font-size:0.6rem; color:var(--gold); letter-spacing:0.06em; }
+  .session-btn { font-size:0.5rem; letter-spacing:0.1em; text-transform:uppercase; background:none; border:1px solid var(--border); color:var(--smoke); border-radius:4px; padding:0.2rem 0.5rem; cursor:pointer; font-family:inherit; }
+  .session-btn:hover { color:var(--gold); border-color:var(--gold-dim); }
+  .session-btn.end { border-color:var(--red); color:var(--red); }
 
-  .day-hero { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem 1.25rem 1.25rem 1.5rem; margin-bottom: 1rem; position: relative; overflow: hidden; }
-  .day-hero::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--gold); }
-  .day-hero-tag { font-size: 0.52rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.3rem; }
-  .day-hero-title { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; letter-spacing: 0.05em; line-height: 1; margin-bottom: 0.4rem; }
-  .day-hero-sub { font-size: 0.6rem; color: var(--smoke); letter-spacing: 0.04em; line-height: 1.6; }
+  /* REST TIMER OVERLAY */
+  .rest-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(9,9,9,0.92); z-index:200; flex-direction:column; align-items:center; justify-content:center; }
+  .rest-overlay.active { display:flex; }
+  .rest-label { font-size:0.6rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--smoke); margin-bottom:0.5rem; }
+  .rest-time { font-family:'Bebas Neue',sans-serif; font-size:6rem; color:var(--gold); line-height:1; }
+  .rest-exercise { font-size:0.6rem; color:var(--silver); margin-top:1rem; text-align:center; max-width:80%; }
+  .rest-skip { margin-top:2rem; font-size:0.55rem; letter-spacing:0.1em; text-transform:uppercase; background:none; border:1px solid var(--border); color:var(--smoke); border-radius:6px; padding:0.5rem 1.5rem; cursor:pointer; font-family:inherit; }
+  .rest-skip:hover { color:var(--gold); border-color:var(--gold-dim); }
 
-  .block-label { font-size: 0.52rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); padding: 0.6rem 0 0.5rem; display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
-  .block-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  /* SCROLL AREA */
+  .scroll-area { position:fixed; top:var(--header-h); bottom:var(--tab-h); left:0; right:0; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; }
+  .scroll-area.with-timer { top:calc(var(--header-h) + 32px); }
+  .page { display:none; padding:1rem 1rem 1.5rem; }
+  .page.active { display:block; }
 
-  .ex-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 0.6rem; overflow: hidden; }
-  .ex-card-top { padding: 0.9rem 1rem 0.75rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
-  .ex-left { flex: 1; }
-  .ex-name { font-size: 0.75rem; font-weight: 500; letter-spacing: 0.02em; line-height: 1.3; margin-bottom: 0.25rem; color: var(--white); }
-  .ex-note { font-size: 0.58rem; color: var(--smoke); font-style: italic; line-height: 1.5; }
-  .ex-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 0.25rem; flex-shrink: 0; }
-  .ex-badge { font-size: 0.58rem; letter-spacing: 0.04em; padding: 0.18rem 0.45rem; border-radius: 4px; white-space: nowrap; }
-  .ex-badge.sets { background: var(--gold-bg); color: var(--gold); border: 1px solid var(--gold-dim); }
-  .ex-badge.reps { background: var(--surface); color: var(--silver); border: 1px solid var(--border); }
-  .ex-meta-strip { background: var(--surface); border-top: 1px solid var(--border); padding: 0.45rem 1rem; display: flex; gap: 1.5rem; }
-  .ex-meta-label { font-size: 0.43rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--smoke); margin-bottom: 0.1rem; }
-  .ex-meta-value { font-size: 0.62rem; color: var(--silver); }
-  .ss-badge { display: inline-block; font-size: 0.43rem; letter-spacing: 0.08em; background: rgba(201,168,76,0.15); color: var(--gold); padding: 0.1rem 0.3rem; border-radius: 3px; text-transform: uppercase; margin-left: 0.35rem; vertical-align: middle; }
+  /* DAY HERO */
+  .day-hero { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1.25rem 1.25rem 1.25rem 1.5rem; margin-bottom:1rem; position:relative; overflow:hidden; }
+  .day-hero::before { content:''; position:absolute; top:0; left:0; width:4px; height:100%; background:var(--gold); }
+  .day-hero-tag { font-size:0.52rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--gold); margin-bottom:0.3rem; }
+  .day-hero-title { font-family:'Bebas Neue',sans-serif; font-size:2.2rem; letter-spacing:0.05em; line-height:1; margin-bottom:0.4rem; }
+  .day-hero-sub { font-size:0.6rem; color:var(--smoke); letter-spacing:0.04em; line-height:1.6; }
 
-  .cardio-card { background: var(--card); border: 1px solid var(--border); border-left: 3px solid var(--gold); border-radius: 10px; padding: 1rem; margin-bottom: 0.6rem; }
-  .cardio-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.05rem; letter-spacing: 0.06em; color: var(--gold); margin-bottom: 0.4rem; }
-  .cardio-detail { font-size: 0.62rem; color: var(--silver); line-height: 1.7; }
-  .achilles-note { margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px solid var(--border); font-size: 0.57rem; color: var(--orange); line-height: 1.5; }
+  /* BLOCK LABEL */
+  .block-label { font-size:0.52rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--gold); padding:0.6rem 0 0.5rem; display:flex; align-items:center; gap:0.75rem; margin-bottom:0.5rem; }
+  .block-label::after { content:''; flex:1; height:1px; background:var(--border); }
 
-  .warning-card { background: var(--red-bg); border: 1px solid rgba(176,48,48,0.35); border-left: 3px solid var(--red); border-radius: 10px; padding: 1rem; margin-bottom: 1rem; font-size: 0.62rem; color: #d07070; line-height: 1.7; }
-  .warning-card strong { color: #e09090; }
+  /* EXERCISE CARD */
+  .ex-card { background:var(--card); border:1px solid var(--border); border-radius:10px; margin-bottom:0.6rem; overflow:hidden; transition:border-color 0.2s; }
+  .ex-card.all-done { border-color:var(--green); }
+  .ex-card-top { padding:0.9rem 1rem 0.75rem; display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem; }
+  .ex-left { flex:1; }
+  .ex-name { font-size:0.75rem; font-weight:500; letter-spacing:0.02em; line-height:1.3; margin-bottom:0.25rem; color:var(--white); }
+  .ex-note { font-size:0.58rem; color:var(--smoke); font-style:italic; line-height:1.5; }
+  .ex-last-session { font-size:0.52rem; color:var(--gold-dim); margin-top:0.3rem; }
+  .ex-badges { display:flex; flex-direction:column; align-items:flex-end; gap:0.25rem; flex-shrink:0; }
+  .ex-badge { font-size:0.58rem; letter-spacing:0.04em; padding:0.18rem 0.45rem; border-radius:4px; white-space:nowrap; }
+  .ex-badge.sets { background:var(--gold-bg); color:var(--gold); border:1px solid var(--gold-dim); }
+  .ex-badge.reps { background:var(--surface); color:var(--silver); border:1px solid var(--border); }
+  .ex-meta-strip { background:var(--surface); border-top:1px solid var(--border); padding:0.45rem 1rem; display:flex; gap:1.5rem; }
+  .ex-meta-label { font-size:0.43rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--smoke); margin-bottom:0.1rem; }
+  .ex-meta-value { font-size:0.62rem; color:var(--silver); }
+  .ss-badge { display:inline-block; font-size:0.43rem; letter-spacing:0.08em; background:rgba(201,168,76,0.15); color:var(--gold); padding:0.1rem 0.3rem; border-radius:3px; text-transform:uppercase; margin-left:0.35rem; vertical-align:middle; }
 
-  .principle-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 0.6rem; overflow: hidden; }
-  .principle-card-header { padding: 1rem; border-bottom: 1px solid transparent; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; }
-  .principle-card.open .principle-card-header { border-bottom-color: var(--border); }
-  .principle-card-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.05rem; letter-spacing: 0.06em; color: var(--gold); }
-  .principle-chevron { font-size: 0.65rem; color: var(--smoke); transition: transform 0.2s; }
-  .principle-card.open .principle-chevron { transform: rotate(180deg); }
-  .principle-body { display: none; padding: 1rem; }
-  .principle-card.open .principle-body { display: block; }
-  .principle-body p { font-size: 0.63rem; color: var(--silver); line-height: 1.8; margin-bottom: 0.75rem; }
-  .principle-list { list-style: none; }
-  .principle-list li { font-size: 0.61rem; color: var(--silver); padding: 0.4rem 0; border-bottom: 1px solid var(--border); display: flex; gap: 0.5rem; line-height: 1.5; }
-  .principle-list li:last-child { border-bottom: none; }
-  .principle-list li::before { content: '—'; color: var(--gold); flex-shrink: 0; }
+  /* SET LOGGING */
+  .set-log-area { padding:0.5rem 1rem 0.75rem; border-top:1px solid var(--border); }
+  .set-row { display:flex; align-items:center; gap:0.5rem; padding:0.35rem 0; border-bottom:1px solid rgba(42,42,42,0.5); }
+  .set-row:last-child { border-bottom:none; }
+  .set-num { font-size:0.5rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--smoke); width:2.5rem; flex-shrink:0; }
+  .set-input { background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--white); font-family:inherit; font-size:0.65rem; padding:0.3rem 0.4rem; width:4rem; text-align:center; }
+  .set-input:focus { outline:none; border-color:var(--gold-dim); }
+  .set-input::placeholder { color:var(--smoke); font-size:0.55rem; }
+  .set-x { font-size:0.55rem; color:var(--smoke); }
+  .set-check { width:28px; height:28px; border-radius:50%; border:2px solid var(--border); background:none; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.15s; font-size:0.7rem; color:transparent; }
+  .set-check.done { background:var(--green); border-color:var(--green); color:var(--white); }
 
-  .data-table { width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 1rem; font-size: 0.6rem; border-collapse: collapse; }
-  .data-table thead { background: var(--surface); }
-  .data-table th { padding: 0.6rem 0.75rem; text-align: left; font-size: 0.48rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--smoke); font-weight: 400; }
-  .data-table td { padding: 0.65rem 0.75rem; border-top: 1px solid var(--border); color: var(--silver); line-height: 1.5; }
-  .data-table td:first-child { color: var(--white); }
-  .gold { color: var(--gold); font-weight: 500; }
+  /* CARDIO CARD */
+  .cardio-card { background:var(--card); border:1px solid var(--border); border-left:3px solid var(--gold); border-radius:10px; padding:1rem; margin-bottom:0.6rem; }
+  .cardio-title { font-family:'Bebas Neue',sans-serif; font-size:1.05rem; letter-spacing:0.06em; color:var(--gold); margin-bottom:0.4rem; }
+  .cardio-detail { font-size:0.62rem; color:var(--silver); line-height:1.7; }
+  .achilles-note { margin-top:0.6rem; padding-top:0.6rem; border-top:1px solid var(--border); font-size:0.57rem; color:var(--orange); line-height:1.5; }
 
-  .tab-bar { position: fixed; bottom: 0; left: 0; right: 0; height: var(--tab-h); background: var(--surface); border-top: 1px solid var(--border); display: flex; z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
-  .tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.2rem; background: none; border: none; cursor: pointer; padding: 0.5rem 0.2rem; position: relative; }
-  .tab::after { content: ''; position: absolute; top: 0; left: 20%; right: 20%; height: 2px; background: var(--gold); border-radius: 0 0 2px 2px; opacity: 0; transition: opacity 0.15s; }
-  .tab.active::after { opacity: 1; }
-  .tab-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; line-height: 1; color: var(--smoke); transition: color 0.15s; }
-  .tab.active .tab-num { color: var(--gold); }
-  .tab-label { font-size: 0.4rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--smoke); transition: color 0.15s; line-height: 1; }
-  .tab.active .tab-label { color: var(--gold); }
-  .tab-icon { font-size: 0.52rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--smoke); transition: color 0.15s; }
-  .tab.active .tab-icon { color: var(--gold); }
+  /* WARNING */
+  .warning-card { background:var(--red-bg); border:1px solid rgba(176,48,48,0.35); border-left:3px solid var(--red); border-radius:10px; padding:1rem; margin-bottom:1rem; font-size:0.62rem; color:#d07070; line-height:1.7; }
+  .warning-card strong { color:#e09090; }
+
+  /* PRINCIPLES */
+  .principle-card { background:var(--card); border:1px solid var(--border); border-radius:10px; margin-bottom:0.6rem; overflow:hidden; }
+  .principle-card-header { padding:1rem; border-bottom:1px solid transparent; display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; }
+  .principle-card.open .principle-card-header { border-bottom-color:var(--border); }
+  .principle-card-title { font-family:'Bebas Neue',sans-serif; font-size:1.05rem; letter-spacing:0.06em; color:var(--gold); }
+  .principle-chevron { font-size:0.65rem; color:var(--smoke); transition:transform 0.2s; }
+  .principle-card.open .principle-chevron { transform:rotate(180deg); }
+  .principle-body { display:none; padding:1rem; }
+  .principle-card.open .principle-body { display:block; }
+  .principle-body p { font-size:0.63rem; color:var(--silver); line-height:1.8; margin-bottom:0.75rem; }
+  .principle-list { list-style:none; }
+  .principle-list li { font-size:0.61rem; color:var(--silver); padding:0.4rem 0; border-bottom:1px solid var(--border); display:flex; gap:0.5rem; line-height:1.5; }
+  .principle-list li:last-child { border-bottom:none; }
+  .principle-list li::before { content:'—'; color:var(--gold); flex-shrink:0; }
+
+  /* DATA TABLE */
+  .data-table { width:100%; background:var(--card); border:1px solid var(--border); border-radius:10px; overflow:hidden; margin-bottom:1rem; font-size:0.6rem; border-collapse:collapse; }
+  .data-table thead { background:var(--surface); }
+  .data-table th { padding:0.6rem 0.75rem; text-align:left; font-size:0.48rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--smoke); font-weight:400; }
+  .data-table td { padding:0.65rem 0.75rem; border-top:1px solid var(--border); color:var(--silver); line-height:1.5; }
+  .data-table td:first-child { color:var(--white); }
+  .gold { color:var(--gold); font-weight:500; }
+
+  /* BODYWEIGHT LOG */
+  .bw-log-section { margin-bottom:1rem; }
+  .bw-input-row { display:flex; gap:0.5rem; margin-bottom:0.75rem; }
+  .bw-input { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:6px; color:var(--white); font-family:inherit; font-size:0.7rem; padding:0.5rem 0.75rem; }
+  .bw-input:focus { outline:none; border-color:var(--gold-dim); }
+  .bw-btn { background:var(--gold-bg); border:1px solid var(--gold-dim); color:var(--gold); font-family:inherit; font-size:0.55rem; letter-spacing:0.1em; text-transform:uppercase; border-radius:6px; padding:0.5rem 1rem; cursor:pointer; }
+  .bw-chart { width:100%; height:120px; background:var(--surface); border:1px solid var(--border); border-radius:8px; overflow:hidden; position:relative; }
+  .bw-chart canvas { width:100%; height:100%; }
+  .bw-entries { margin-top:0.5rem; max-height:120px; overflow-y:auto; }
+  .bw-entry { display:flex; justify-content:space-between; padding:0.3rem 0; border-bottom:1px solid rgba(42,42,42,0.5); font-size:0.55rem; }
+  .bw-entry-date { color:var(--smoke); }
+  .bw-entry-weight { color:var(--gold); }
+
+  /* WEEKLY SUMMARY */
+  .weekly-summary { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:1rem; margin-bottom:1rem; }
+  .weekly-summary-title { font-family:'Bebas Neue',sans-serif; font-size:1.1rem; letter-spacing:0.06em; color:var(--gold); margin-bottom:0.5rem; }
+  .weekly-stats { display:flex; gap:1rem; flex-wrap:wrap; }
+  .weekly-stat { flex:1; min-width:60px; text-align:center; }
+  .weekly-stat-value { font-family:'Bebas Neue',sans-serif; font-size:1.3rem; color:var(--gold); }
+  .weekly-stat-label { font-size:0.45rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--smoke); }
+
+  /* TAB BAR */
+  .tab-bar { position:fixed; bottom:0; left:0; right:0; height:var(--tab-h); background:var(--surface); border-top:1px solid var(--border); display:flex; z-index:100; padding-bottom:env(safe-area-inset-bottom); }
+  .tab { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.2rem; background:none; border:none; cursor:pointer; padding:0.5rem 0.2rem; position:relative; }
+  .tab::after { content:''; position:absolute; top:0; left:20%; right:20%; height:2px; background:var(--gold); border-radius:0 0 2px 2px; opacity:0; transition:opacity 0.15s; }
+  .tab.active::after { opacity:1; }
+  .tab-num { font-family:'Bebas Neue',sans-serif; font-size:1.1rem; line-height:1; color:var(--smoke); transition:color 0.15s; }
+  .tab.active .tab-num { color:var(--gold); }
+  .tab-label { font-size:0.4rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--smoke); transition:color 0.15s; line-height:1; }
+  .tab.active .tab-label { color:var(--gold); }
+  .tab-icon { font-size:0.52rem; letter-spacing:0.06em; text-transform:uppercase; color:var(--smoke); transition:color 0.15s; }
+  .tab.active .tab-icon { color:var(--gold); }
 </style>
 </head>
 <body>
@@ -119,8 +172,8 @@
   <div class="header-top">
     <div class="logo">IRON<span>PROTOCOL</span></div>
     <div class="header-badge">
-      <div>235 lbs &nbsp;·&nbsp; TRT <strong>100–150mg</strong></div>
-      <div>5-Day PPL/Hybrid &nbsp;·&nbsp; 12 Weeks</div>
+      <div>235 lbs · TRT <strong>100–150mg</strong></div>
+      <div>5-Day PPL/Hybrid · 12 Weeks</div>
     </div>
   </div>
   <div class="stats-strip">
@@ -132,804 +185,50 @@
   </div>
 </header>
 
-<div class="scroll-area">
+<div class="session-bar" id="sessionBar">
+  <span class="session-timer-text" id="sessionTimerText">SESSION 00:00</span>
+  <div>
+    <button class="session-btn" onclick="toggleSession()" id="sessionToggle">Start</button>
+    <button class="session-btn end" onclick="endSession()" style="margin-left:0.3rem">End & Save</button>
+  </div>
+</div>
+
+<div class="rest-overlay" id="restOverlay">
+  <div class="rest-label">REST</div>
+  <div class="rest-time" id="restTime">0:00</div>
+  <div class="rest-exercise" id="restExName"></div>
+  <button class="rest-skip" onclick="skipRest()">Skip</button>
+</div>
+
+<div class="scroll-area" id="scrollArea">
+
+<!-- WEEKLY SUMMARY (shown on all day pages) -->
+<div id="weeklySummary" style="display:none; padding:1rem 1rem 0;">
+  <div class="weekly-summary">
+    <div class="weekly-summary-title">This Week</div>
+    <div class="weekly-stats">
+      <div class="weekly-stat"><div class="weekly-stat-value" id="wkSets">0</div><div class="weekly-stat-label">Sets</div></div>
+      <div class="weekly-stat"><div class="weekly-stat-value" id="wkReps">0</div><div class="weekly-stat-label">Reps</div></div>
+      <div class="weekly-stat"><div class="weekly-stat-value" id="wkTonnage">0</div><div class="weekly-stat-label">Tonnage (lbs)</div></div>
+      <div class="weekly-stat"><div class="weekly-stat-value" id="wkSessions">0</div><div class="weekly-stat-label">Sessions</div></div>
+    </div>
+  </div>
+</div>
 
 <!-- DAY 1: PUSH -->
-<div id="p-d1" class="page active">
-  <div class="day-hero">
-    <div class="day-hero-tag">Day 01 · Monday</div>
-    <div class="day-hero-title">PUSH DAY</div>
-    <div class="day-hero-sub">Chest · Shoulders · Triceps<br>Volume-first. Chest heavy, shoulders secondary, tris finished.</div>
-  </div>
-
-  <div class="block-label">A — Warmup</div>
-  <div class="cardio-card">
-    <div class="cardio-title">Bike — 10 Min Easy</div>
-    <div class="cardio-detail">Low resistance. HR under 130. Joint lubrication only — not conditioning work.</div>
-    <div class="achilles-note">⚡ Achilles-safe. Zero impact. Default warmup for all sessions.</div>
-  </div>
-
-  <div class="block-label">B — Primary Chest</div>
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Barbell Flat Bench Press</div>
-        <div class="ex-note">Control eccentric 3s. Drive through full chest. Main strength movement.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">4 sets</div><div class="ex-badge reps">5–6 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">3 min</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">8–9</div></div>
-      <div><div class="ex-meta-label">Tempo</div><div class="ex-meta-value">3-1-X</div></div>
-    </div>
-  </div>
-
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Incline DB Press</div>
-        <div class="ex-note">45° angle. Full stretch at bottom. Don't lock out.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">4 sets</div><div class="ex-badge reps">8–10 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">2 min</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">8</div></div>
-    </div>
-  </div>
-
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Cable Fly (Low to High)</div>
-        <div class="ex-note">Inner chest focus. Squeeze hard at top. Full arm arc.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">3 sets</div><div class="ex-badge reps">12–15 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">90s</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">7–8</div></div>
-    </div>
-  </div>
-
-  <div class="block-label">C — Shoulders</div>
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Seated DB Overhead Press</div>
-        <div class="ex-note">Controlled descent. Don't shrug at top.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">4 sets</div><div class="ex-badge reps">8–10 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">2 min</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">8</div></div>
-    </div>
-  </div>
-
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Lateral Raise (Cable or DB)</div>
-        <div class="ex-note">Slight lean, lead with elbow. Do not shrug.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">4 sets</div><div class="ex-badge reps">15–20 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">60s</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">7</div></div>
-    </div>
-  </div>
-
-  <div class="block-label">D — Triceps Finisher</div>
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Overhead Cable Tricep Extension <span class="ss-badge">SS A</span></div>
-        <div class="ex-note">Long head stretch. Full extension. Go straight into pushdown.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">3 sets</div><div class="ex-badge reps">12 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">No rest</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">8</div></div>
-    </div>
-  </div>
-
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Tricep Rope Pushdown <span class="ss-badge">SS A</span></div>
-        <div class="ex-note">Flare rope at bottom. Superset with extension above.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">3 sets</div><div class="ex-badge reps">15 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">90s</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">7–8</div></div>
-    </div>
-  </div>
-</div>
-
+<div id="p-d1" class="page active"></div>
 <!-- DAY 2: PULL -->
-<div id="p-d2" class="page">
-  <div class="day-hero">
-    <div class="day-hero-tag">Day 02 · Tuesday</div>
-    <div class="day-hero-title">PULL DAY</div>
-    <div class="day-hero-sub">Back Thickness · Lats · Biceps<br>Heaviest back day. Row patterns dominate.</div>
-  </div>
-
-  <div class="block-label">A — Warmup</div>
-  <div class="cardio-card">
-    <div class="cardio-title">Row Machine — 8 Min</div>
-    <div class="cardio-detail">Moderate pace, 24–26 strokes/min. Activates the exact muscles you're about to train.</div>
-    <div class="achilles-note">⚡ Upper body dominant. Zero lower extremity impact.</div>
-  </div>
-
-  <div class="block-label">B — Back Thickness</div>
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Barbell Bent-Over Row</div>
-        <div class="ex-note">Overhand grip. Pull to lower chest. Brace hard.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">4 sets</div><div class="ex-badge reps">5–6 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">3 min</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">8–9</div></div>
-    </div>
-  </div>
-
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Seated Cable Row (Wide Grip)</div>
-        <div class="ex-note">Drive elbows back hard. Pause at contraction 1s.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">4 sets</div><div class="ex-badge reps">8–10 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">2 min</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">8</div></div>
-    </div>
-  </div>
-
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Single-Arm DB Row</div>
-        <div class="ex-note">Full ROM. Let shoulder blade retract and protract fully.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">3 sets</div><div class="ex-badge reps">10–12 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">90s</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">8</div></div>
-    </div>
-  </div>
-
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">TRX Row (Feet Elevated)</div>
-        <div class="ex-note">Feet elevated = harder. Strict tempo. Full chest to handles.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">3 sets</div><div class="ex-badge reps">12–15 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">90s</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">7</div></div>
-    </div>
-  </div>
-
-  <div class="block-label">C — Lat Width</div>
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Lat Pulldown (Wide Overhand)</div>
-        <div class="ex-note">Chest up, lean slightly back. Pull to upper chest.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">3 sets</div><div class="ex-badge reps">10–12 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">2 min</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">8</div></div>
-    </div>
-  </div>
-
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Straight-Arm Cable Pulldown</div>
-        <div class="ex-note">Feel the lat stretch fully at top. No body English.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">3 sets</div><div class="ex-badge reps">15 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">60s</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">7</div></div>
-    </div>
-  </div>
-
-  <div class="block-label">D — Biceps</div>
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Barbell Curl</div>
-        <div class="ex-note">No body English. Slow eccentric 3s. Squeeze at top.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">3 sets</div><div class="ex-badge reps">8–10 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">90s</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">8</div></div>
-    </div>
-  </div>
-
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Incline DB Curl <span class="ss-badge">SS B</span></div>
-        <div class="ex-note">Full stretch. Long head emphasis. Key stretch-mediated movement.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">3 sets</div><div class="ex-badge reps">10–12 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">No rest</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">8</div></div>
-    </div>
-  </div>
-
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Hammer Curl <span class="ss-badge">SS B</span></div>
-        <div class="ex-note">Brachialis and forearm. Superset with incline curl above.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">3 sets</div><div class="ex-badge reps">12 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">90s</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">7</div></div>
-    </div>
-  </div>
-</div>
-
+<div id="p-d2" class="page"></div>
 <!-- DAY 3: LEGS -->
-<div id="p-d3" class="page">
-  <div class="day-hero">
-    <div class="day-hero-tag">Day 03 · Thursday</div>
-    <div class="day-hero-title">LEG DAY</div>
-    <div class="day-hero-sub">Quads · Hamstrings · Glutes<br>Achilles-managed. No explosive jumping. Full ROM prioritized.</div>
-  </div>
-  <div class="warning-card"><strong>Achilles Protocol:</strong> ~90% recovered. Avoid loaded calf raises, box jumps, sprint starts. Any sharp tendon pain mid-session = stop that movement immediately.</div>
-
-  <div class="block-label">A — Warmup</div>
-  <div class="cardio-card">
-    <div class="cardio-title">Bike — 10 Min Easy</div>
-    <div class="cardio-detail">Low resistance. Warms knees and hips without Achilles stress. HR under 130.</div>
-    <div class="achilles-note">⚡ Mandatory for leg day. Protects tendon before heavy loading.</div>
-  </div>
-
-  <div class="block-label">B — Quad / Glute</div>
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Barbell Back Squat</div>
-        <div class="ex-note">To parallel or below. Watch for heel rise — Achilles warning sign.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">4 sets</div><div class="ex-badge reps">5–6 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">3 min</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">8</div></div>
-    </div>
-  </div>
-
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Leg Press (High &amp; Wide Foot)</div>
-        <div class="ex-note">High foot = glutes and hams. Deep ROM. Zero Achilles strain.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">4 sets</div><div class="ex-badge reps">10–12 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">2 min</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">8</div></div>
-    </div>
-  </div>
-
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Bulgarian Split Squat (DB)</div>
-        <div class="ex-note">Rear foot on bench. Forward lean = glute emphasis.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">3 sets</div><div class="ex-badge reps">8–10 / leg</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">2 min</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">8</div></div>
-    </div>
-  </div>
-
-  <div class="block-label">C — Hamstrings / Posterior</div>
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Romanian Deadlift (Bar)</div>
-        <div class="ex-note">Hinge at hip. Feel the hamstring stretch. Don't round low back.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">4 sets</div><div class="ex-badge reps">8–10 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">2 min</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">8</div></div>
-    </div>
-  </div>
-
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Lying Leg Curl</div>
-        <div class="ex-note">Full stretch, full contraction. Slow eccentric 3s.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">3 sets</div><div class="ex-badge reps">12–15 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">90s</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">7–8</div></div>
-    </div>
-  </div>
-
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Hip Thrust (Barbell)</div>
-        <div class="ex-note">Shoulders on bench. Drive hips to ceiling. Squeeze hard at top.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">4 sets</div><div class="ex-badge reps">10–12 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">2 min</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">8</div></div>
-    </div>
-  </div>
-
-  <div class="block-label">D — Quad Isolation</div>
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Leg Extension</div>
-        <div class="ex-note">Controlled. Pause at top 1s. Don't swing.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">3 sets</div><div class="ex-badge reps">15–20 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">60s</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">7</div></div>
-    </div>
-  </div>
-</div>
-
+<div id="p-d3" class="page"></div>
 <!-- DAY 4: UPPER -->
-<div id="p-d4" class="page">
-  <div class="day-hero">
-    <div class="day-hero-tag">Day 04 · Friday</div>
-    <div class="day-hero-title">UPPER POWER</div>
-    <div class="day-hero-sub">Arms · Shoulders · Core<br>Arm specialization day. High volume, pump-focused.</div>
-  </div>
-
-  <div class="block-label">A — Shoulder (Rear + Side)</div>
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Face Pull (Cable)</div>
-        <div class="ex-note">External rotation. Rear delts and rotator cuff health. Never skip.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">4 sets</div><div class="ex-badge reps">15–20 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">60s</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">7</div></div>
-    </div>
-  </div>
-
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">DB Lateral Raise (Drop Set)</div>
-        <div class="ex-note">2 working sets then 1 drop set: heavy → medium → light, no rest between drops.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">3 sets</div><div class="ex-badge reps">15/15/20</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">90s</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">8</div></div>
-    </div>
-  </div>
-
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Arnold Press</div>
-        <div class="ex-note">Full rotation. Hits all three delt heads. Controlled pace.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">3 sets</div><div class="ex-badge reps">10–12 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">90s</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">8</div></div>
-    </div>
-  </div>
-
-  <div class="block-label">B — Biceps (Volume)</div>
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Preacher Curl (EZ Bar)</div>
-        <div class="ex-note">No momentum. Full stretch at bottom. Best bicep isolation.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">4 sets</div><div class="ex-badge reps">10–12 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">90s</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">8</div></div>
-    </div>
-  </div>
-
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Cable Curl (Both Arms)</div>
-        <div class="ex-note">Constant tension. Squeeze hard. Don't slam the stack.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">3 sets</div><div class="ex-badge reps">12–15 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">60s</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">7</div></div>
-    </div>
-  </div>
-
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">DB Concentration Curl</div>
-        <div class="ex-note">Elbow against inner thigh. Pure isolation finish.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">3 sets</div><div class="ex-badge reps">12 / arm</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">60s</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">7–8</div></div>
-    </div>
-  </div>
-
-  <div class="block-label">C — Triceps (Volume)</div>
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Close-Grip Bench Press</div>
-        <div class="ex-note">Elbows tucked. Slow eccentric. Heavy compound tri work.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">4 sets</div><div class="ex-badge reps">8–10 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">2 min</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">8</div></div>
-    </div>
-  </div>
-
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Skull Crusher (EZ Bar)</div>
-        <div class="ex-note">Elbows vertical. Lower to forehead. Long head stretch.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">3 sets</div><div class="ex-badge reps">10–12 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">90s</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">8</div></div>
-    </div>
-  </div>
-
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Single-Arm Cable Pushdown</div>
-        <div class="ex-note">Rotate palm down at lockout. Finisher — chase the pump.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">3 sets</div><div class="ex-badge reps">15 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">60s</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">7</div></div>
-    </div>
-  </div>
-
-  <div class="block-label">D — Core</div>
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Cable Crunch</div>
-        <div class="ex-note">Kneel, pull elbows to thighs. Round the lumbar. Best weighted core movement.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">4 sets</div><div class="ex-badge reps">15–20 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">60s</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">8</div></div>
-    </div>
-  </div>
-
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Hanging Leg Raise <span class="ss-badge">SS C</span></div>
-        <div class="ex-note">Control descent. Posterior pelvic tilt at top.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">3 sets</div><div class="ex-badge reps">12–15 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">No rest</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">8</div></div>
-    </div>
-  </div>
-
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Ab Wheel Rollout <span class="ss-badge">SS C</span></div>
-        <div class="ex-note">From knees. Full extension if possible. Superset with above.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">3 sets</div><div class="ex-badge reps">10–12 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">60s</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">8</div></div>
-    </div>
-  </div>
-</div>
-
+<div id="p-d4" class="page"></div>
 <!-- DAY 5: ATHLETIC -->
-<div id="p-d5" class="page">
-  <div class="day-hero">
-    <div class="day-hero-tag">Day 05 · Saturday</div>
-    <div class="day-hero-title">ATHLETIC DAY</div>
-    <div class="day-hero-sub">Conditioning · Kettlebells · Bag Work · Core<br>No heavy lifting. GPP, capacity, mental edge.</div>
-  </div>
-
-  <div class="block-label">A — Conditioning (Choose 1–2)</div>
-  <div class="cardio-card">
-    <div class="cardio-title">Option A — Bike Intervals</div>
-    <div class="cardio-detail">20 min total. 30s hard / 90s easy × 10 rounds. Target HR 160–170 on efforts.</div>
-    <div class="achilles-note">⚡ Best Achilles-safe option. Highest caloric burn.</div>
-  </div>
-  <div class="cardio-card">
-    <div class="cardio-title">Option B — Row Machine Intervals</div>
-    <div class="cardio-detail">500m hard / 2 min rest × 6 rounds. Sub-2:00/500m target. Builds lactic capacity and back endurance simultaneously.</div>
-    <div class="achilles-note">⚡ Zero impact. Upper body dominant.</div>
-  </div>
-  <div class="cardio-card">
-    <div class="cardio-title">Option C — Bag Work + TRX Circuit</div>
-    <div class="cardio-detail">4 rounds: 2 min bag work → TRX Rows ×15 → TRX Push-Up ×15 → Rest 90s.</div>
-    <div class="achilles-note">⚡ Flat-footed stance only on bag. No explosive pivots this phase.</div>
-  </div>
-
-  <div class="block-label">B — Kettlebell Circuit</div>
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">KB Goblet Squat</div>
-        <div class="ex-note">Deep. Elbows inside knees. Great mobility + quad work.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">3 sets</div><div class="ex-badge reps">15 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">60s</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">7</div></div>
-    </div>
-  </div>
-
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">KB Swing (Two-Hand)</div>
-        <div class="ex-note">Hip hinge. Explosive hip drive. NOT a squat movement.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">4 sets</div><div class="ex-badge reps">20 reps</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">60s</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">7–8</div></div>
-    </div>
-  </div>
-
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">KB Turkish Get-Up</div>
-        <div class="ex-note">Slow and deliberate. Best unilateral stability movement.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">3 sets</div><div class="ex-badge reps">3 / side</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">90s</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">7</div></div>
-    </div>
-  </div>
-
-  <div class="block-label">C — Core Finisher</div>
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Plank Variations</div>
-        <div class="ex-note">Standard → Side Plank L → Side Plank R. 45s each.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">3 rounds</div><div class="ex-badge reps">45s each</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">60s</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">7</div></div>
-    </div>
-  </div>
-
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Pallof Press (Cable)</div>
-        <div class="ex-note">Anti-rotation. Core stability under load. Both sides.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">3 sets</div><div class="ex-badge reps">12 / side</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">60s</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">7</div></div>
-    </div>
-  </div>
-
-  <div class="ex-card">
-    <div class="ex-card-top">
-      <div class="ex-left">
-        <div class="ex-name">Dead Bug</div>
-        <div class="ex-note">Press lower back INTO floor the entire time. Slow and controlled.</div>
-      </div>
-      <div class="ex-badges"><div class="ex-badge sets">3 sets</div><div class="ex-badge reps">10 / side</div></div>
-    </div>
-    <div class="ex-meta-strip">
-      <div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">60s</div></div>
-      <div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">6</div></div>
-    </div>
-  </div>
-</div>
-
+<div id="p-d5" class="page"></div>
 <!-- PRINCIPLES -->
-<div id="p-ref" class="page">
-  <div class="day-hero">
-    <div class="day-hero-tag">Reference</div>
-    <div class="day-hero-title">PRINCIPLES</div>
-    <div class="day-hero-sub">Nutrition · Progression · TRT · Recovery · Supplements</div>
-  </div>
-  <div class="warning-card"><strong>Not medical advice.</strong> TRT notes are programming context only. All hormone adjustments must be cleared by your physician.</div>
+<div id="p-ref" class="page"></div>
 
-  <div class="principle-card open">
-    <div class="principle-card-header" onclick="toggleP(this)"><div class="principle-card-title">Weekly Schedule</div><div class="principle-chevron">▼</div></div>
-    <div class="principle-body">
-      <ul class="principle-list">
-        <li>Monday — Push (Chest / Shoulders / Tris)</li>
-        <li>Tuesday — Pull (Back / Bis)</li>
-        <li>Wednesday — Rest or light walk</li>
-        <li>Thursday — Legs</li>
-        <li>Friday — Upper Power (Arms / Shoulders / Core)</li>
-        <li>Saturday — Athletic / Conditioning</li>
-        <li>Sunday — Full rest. Sleep and food.</li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="principle-card">
-    <div class="principle-card-header" onclick="toggleP(this)"><div class="principle-card-title">Nutrition Strategy</div><div class="principle-chevron">▼</div></div>
-    <div class="principle-body">
-      <p>Eating intuitively works if you anchor it to one rule: protein first, every meal.</p>
-      <ul class="principle-list">
-        <li>Target 235–250g protein daily (1g+ per lb bodyweight)</li>
-        <li>Caloric target: 3,200–3,600 kcal/day lean bulk</li>
-        <li>Carbs around training sessions — pre and post window</li>
-        <li>Don't fear fats — testosterone production depends on them</li>
-        <li>Minimum 1 gallon water/day on training days</li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="principle-card">
-    <div class="principle-card-header" onclick="toggleP(this)"><div class="principle-card-title">Progression Model</div><div class="principle-chevron">▼</div></div>
-    <div class="principle-body">
-      <p>Double progression: every exercise tracks both reps and load.</p>
-      <ul class="principle-list">
-        <li>Hit top of rep range → add weight next session</li>
-        <li>Can't hit bottom of range → reduce weight 5–10%</li>
-        <li>Compounds: aim +5 lbs/week minimum</li>
-        <li>Isolation: progress every 1–2 weeks</li>
-        <li>Deload every 6th week: drop volume 40%, keep intensity</li>
-        <li>Log every session. Memory is not a training log.</li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="principle-card">
-    <div class="principle-card-header" onclick="toggleP(this)"><div class="principle-card-title">TRT &amp; Hormone Context</div><div class="principle-chevron">▼</div></div>
-    <div class="principle-body">
-      <p>At 100–150mg/wk you're in the upper physiological range. Recovery and protein synthesis are already enhanced above natural baseline.</p>
-      <ul class="principle-list">
-        <li>Current dose: sufficient for serious lean mass gains</li>
-        <li>Dose increase: only if stalled after 8+ weeks of consistent training + diet</li>
-        <li>Labs before any increase: Total T, Free T, E2, Hematocrit, PSA</li>
-        <li>Higher doses increase E2 — discuss AI management with physician</li>
-        <li>Sleep is the primary anabolic driver on TRT — protect it</li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="principle-card">
-    <div class="principle-card-header" onclick="toggleP(this)"><div class="principle-card-title">Achilles Management</div><div class="principle-chevron">▼</div></div>
-    <div class="principle-body">
-      <ul class="principle-list">
-        <li>Avoid: box jumps, sprint accelerations, heavy calf raises</li>
-        <li>Safe: bike, rower, controlled squats, leg press, hip thrust</li>
-        <li>Any sharp tendon pain = stop that movement immediately</li>
-        <li>Eccentric heel drops daily: 3×15 off a step at 50% intensity</li>
-        <li>Target full clearance by week 8 — reassess running then</li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="principle-card">
-    <div class="principle-card-header" onclick="toggleP(this)"><div class="principle-card-title">Recovery Protocol</div><div class="principle-chevron">▼</div></div>
-    <div class="principle-body">
-      <ul class="principle-list">
-        <li>Sleep minimum 7.5 hrs — non-negotiable on TRT</li>
-        <li>Active recovery: walking, stretching, sauna if available</li>
-        <li>Post-session: 40–50g protein within 60 min</li>
-        <li>Magnesium glycinate 400mg before bed</li>
-        <li>Omega-3 3g EPA/DHA — joint health and Achilles recovery</li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="block-label">Supplement Stack</div>
-  <table class="data-table">
-    <thead><tr><th>Supplement</th><th>Dose</th><th>Timing</th></tr></thead>
-    <tbody>
-      <tr><td>Creatine Monohydrate</td><td class="gold">5g</td><td>Daily</td></tr>
-      <tr><td>Whey Protein</td><td class="gold">As needed</td><td>Post-session</td></tr>
-      <tr><td>Magnesium Glycinate</td><td class="gold">400mg</td><td>Before bed</td></tr>
-      <tr><td>Vitamin D3 + K2</td><td class="gold">5,000 IU</td><td>With meal</td></tr>
-      <tr><td>Omega-3 Fish Oil</td><td class="gold">3g EPA/DHA</td><td>With meals</td></tr>
-      <tr><td>Caffeine (optional)</td><td class="gold">150–200mg</td><td>Pre-session</td></tr>
-    </tbody>
-  </table>
-
-  <div class="block-label">12-Week Targets</div>
-  <table class="data-table">
-    <thead><tr><th>Lift</th><th>Week 6</th><th>Week 12</th></tr></thead>
-    <tbody>
-      <tr><td>Flat Bench</td><td>+15–20 lbs</td><td class="gold">+30–40 lbs</td></tr>
-      <tr><td>Barbell Row</td><td>+15 lbs</td><td class="gold">+30 lbs</td></tr>
-      <tr><td>Back Squat</td><td>+20 lbs</td><td class="gold">+35–45 lbs</td></tr>
-      <tr><td>Romanian DL</td><td>+15 lbs</td><td class="gold">+30 lbs</td></tr>
-      <tr><td>DB OHP</td><td>+5–10 lbs</td><td class="gold">+10–20 lbs</td></tr>
-      <tr><td>Bodyweight</td><td>235–238 lbs</td><td class="gold">238–242 lbs</td></tr>
-    </tbody>
-  </table>
-  <div style="height:0.5rem"></div>
 </div>
-
-</div><!-- end scroll-area -->
 
 <nav class="tab-bar">
   <button class="tab active" onclick="showPage('d1',this)"><div class="tab-num">1</div><div class="tab-label">Push</div></button>
@@ -941,15 +240,493 @@
 </nav>
 
 <script>
-  function showPage(id, btn) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.getElementById('p-' + id).classList.add('active');
-    btn.classList.add('active');
-    document.querySelector('.scroll-area').scrollTop = 0;
+// ===== DATA =====
+const DAYS = {
+  d1: {
+    tag: 'Day 01 · Monday', title: 'PUSH DAY',
+    sub: 'Chest · Shoulders · Triceps<br>Volume-first. Chest heavy, shoulders secondary, tris finished.',
+    blocks: [
+      { label: 'A — Warmup', type: 'cardio', items: [
+        { title: 'Bike — 10 Min Easy', detail: 'Low resistance. HR under 130. Joint lubrication only — not conditioning work.', achilles: 'Achilles-safe. Zero impact. Default warmup for all sessions.' }
+      ]},
+      { label: 'B — Primary Chest', items: [
+        { name: 'Barbell Flat Bench Press', note: 'Control eccentric 3s. Drive through full chest. Main strength movement.', sets: 4, reps: '5–6', rest: '3 min', rpe: '8–9', tempo: '3-1-X', restSec: 180 },
+        { name: 'Incline DB Press', note: '45° angle. Full stretch at bottom. Don\'t lock out.', sets: 4, reps: '8–10', rest: '2 min', rpe: '8', restSec: 120 },
+        { name: 'Cable Fly (Low to High)', note: 'Inner chest focus. Squeeze hard at top. Full arm arc.', sets: 3, reps: '12–15', rest: '90s', rpe: '7–8', restSec: 90 }
+      ]},
+      { label: 'C — Shoulders', items: [
+        { name: 'Seated DB Overhead Press', note: 'Controlled descent. Don\'t shrug at top.', sets: 4, reps: '8–10', rest: '2 min', rpe: '8', restSec: 120 },
+        { name: 'Lateral Raise (Cable or DB)', note: 'Slight lean, lead with elbow. Do not shrug.', sets: 4, reps: '15–20', rest: '60s', rpe: '7', restSec: 60 }
+      ]},
+      { label: 'D — Triceps Finisher', items: [
+        { name: 'Overhead Cable Tricep Extension', note: 'Long head stretch. Full extension. Go straight into pushdown.', sets: 3, reps: '12', rest: 'No rest', rpe: '8', ss: 'SS A', restSec: 0 },
+        { name: 'Tricep Rope Pushdown', note: 'Flare rope at bottom. Superset with extension above.', sets: 3, reps: '15', rest: '90s', rpe: '7–8', ss: 'SS A', restSec: 90 }
+      ]}
+    ]
+  },
+  d2: {
+    tag: 'Day 02 · Tuesday', title: 'PULL DAY',
+    sub: 'Back Thickness · Lats · Biceps<br>Heaviest back day. Row patterns dominate.',
+    blocks: [
+      { label: 'A — Warmup', type: 'cardio', items: [
+        { title: 'Row Machine — 8 Min', detail: 'Moderate pace, 24–26 strokes/min. Activates the exact muscles you\'re about to train.', achilles: 'Upper body dominant. Zero lower extremity impact.' }
+      ]},
+      { label: 'B — Back Thickness', items: [
+        { name: 'Barbell Bent-Over Row', note: 'Overhand grip. Pull to lower chest. Brace hard.', sets: 4, reps: '5–6', rest: '3 min', rpe: '8–9', restSec: 180 },
+        { name: 'Seated Cable Row (Wide Grip)', note: 'Drive elbows back hard. Pause at contraction 1s.', sets: 4, reps: '8–10', rest: '2 min', rpe: '8', restSec: 120 },
+        { name: 'Single-Arm DB Row', note: 'Full ROM. Let shoulder blade retract and protract fully.', sets: 3, reps: '10–12', rest: '90s', rpe: '8', restSec: 90 },
+        { name: 'TRX Row (Feet Elevated)', note: 'Feet elevated = harder. Strict tempo. Full chest to handles.', sets: 3, reps: '12–15', rest: '90s', rpe: '7', restSec: 90 }
+      ]},
+      { label: 'C — Lat Width', items: [
+        { name: 'Lat Pulldown (Wide Overhand)', note: 'Chest up, lean slightly back. Pull to upper chest.', sets: 3, reps: '10–12', rest: '2 min', rpe: '8', restSec: 120 },
+        { name: 'Straight-Arm Cable Pulldown', note: 'Feel the lat stretch fully at top. No body English.', sets: 3, reps: '15', rest: '60s', rpe: '7', restSec: 60 }
+      ]},
+      { label: 'D — Biceps', items: [
+        { name: 'Barbell Curl', note: 'No body English. Slow eccentric 3s. Squeeze at top.', sets: 3, reps: '8–10', rest: '90s', rpe: '8', restSec: 90 },
+        { name: 'Incline DB Curl', note: 'Full stretch. Long head emphasis. Key stretch-mediated movement.', sets: 3, reps: '10–12', rest: 'No rest', rpe: '8', ss: 'SS B', restSec: 0 },
+        { name: 'Hammer Curl', note: 'Brachialis and forearm. Superset with incline curl above.', sets: 3, reps: '12', rest: '90s', rpe: '7', ss: 'SS B', restSec: 90 }
+      ]}
+    ]
+  },
+  d3: {
+    tag: 'Day 03 · Thursday', title: 'LEG DAY',
+    sub: 'Quads · Hamstrings · Glutes<br>Achilles-managed. No explosive jumping. Full ROM prioritized.',
+    warning: '<strong>Achilles Protocol:</strong> ~90% recovered. Avoid loaded calf raises, box jumps, sprint starts. Any sharp tendon pain mid-session = stop that movement immediately.',
+    blocks: [
+      { label: 'A — Warmup', type: 'cardio', items: [
+        { title: 'Bike — 10 Min Easy', detail: 'Low resistance. Warms knees and hips without Achilles stress. HR under 130.', achilles: 'Mandatory for leg day. Protects tendon before heavy loading.' }
+      ]},
+      { label: 'B — Quad / Glute', items: [
+        { name: 'Barbell Back Squat', note: 'To parallel or below. Watch for heel rise — Achilles warning sign.', sets: 4, reps: '5–6', rest: '3 min', rpe: '8', restSec: 180 },
+        { name: 'Leg Press (High & Wide Foot)', note: 'High foot = glutes and hams. Deep ROM. Zero Achilles strain.', sets: 4, reps: '10–12', rest: '2 min', rpe: '8', restSec: 120 },
+        { name: 'Bulgarian Split Squat (DB)', note: 'Rear foot on bench. Forward lean = glute emphasis.', sets: 3, reps: '8–10 / leg', rest: '2 min', rpe: '8', restSec: 120 }
+      ]},
+      { label: 'C — Hamstrings / Posterior', items: [
+        { name: 'Romanian Deadlift (Bar)', note: 'Hinge at hip. Feel the hamstring stretch. Don\'t round low back.', sets: 4, reps: '8–10', rest: '2 min', rpe: '8', restSec: 120 },
+        { name: 'Lying Leg Curl', note: 'Full stretch, full contraction. Slow eccentric 3s.', sets: 3, reps: '12–15', rest: '90s', rpe: '7–8', restSec: 90 },
+        { name: 'Hip Thrust (Barbell)', note: 'Shoulders on bench. Drive hips to ceiling. Squeeze hard at top.', sets: 4, reps: '10–12', rest: '2 min', rpe: '8', restSec: 120 }
+      ]},
+      { label: 'D — Quad Isolation', items: [
+        { name: 'Leg Extension', note: 'Controlled. Pause at top 1s. Don\'t swing.', sets: 3, reps: '15–20', rest: '60s', rpe: '7', restSec: 60 }
+      ]}
+    ]
+  },
+  d4: {
+    tag: 'Day 04 · Friday', title: 'UPPER POWER',
+    sub: 'Arms · Shoulders · Core<br>Arm specialization day. High volume, pump-focused.',
+    blocks: [
+      { label: 'A — Shoulder (Rear + Side)', items: [
+        { name: 'Face Pull (Cable)', note: 'External rotation. Rear delts and rotator cuff health. Never skip.', sets: 4, reps: '15–20', rest: '60s', rpe: '7', restSec: 60 },
+        { name: 'DB Lateral Raise (Drop Set)', note: '2 working sets then 1 drop set: heavy → medium → light, no rest between drops.', sets: 3, reps: '15/15/20', rest: '90s', rpe: '8', restSec: 90 },
+        { name: 'Arnold Press', note: 'Full rotation. Hits all three delt heads. Controlled pace.', sets: 3, reps: '10–12', rest: '90s', rpe: '8', restSec: 90 }
+      ]},
+      { label: 'B — Biceps (Volume)', items: [
+        { name: 'Preacher Curl (EZ Bar)', note: 'No momentum. Full stretch at bottom. Best bicep isolation.', sets: 4, reps: '10–12', rest: '90s', rpe: '8', restSec: 90 },
+        { name: 'Cable Curl (Both Arms)', note: 'Constant tension. Squeeze hard. Don\'t slam the stack.', sets: 3, reps: '12–15', rest: '60s', rpe: '7', restSec: 60 },
+        { name: 'DB Concentration Curl', note: 'Elbow against inner thigh. Pure isolation finish.', sets: 3, reps: '12 / arm', rest: '60s', rpe: '7–8', restSec: 60 }
+      ]},
+      { label: 'C — Triceps (Volume)', items: [
+        { name: 'Close-Grip Bench Press', note: 'Elbows tucked. Slow eccentric. Heavy compound tri work.', sets: 4, reps: '8–10', rest: '2 min', rpe: '8', restSec: 120 },
+        { name: 'Skull Crusher (EZ Bar)', note: 'Elbows vertical. Lower to forehead. Long head stretch.', sets: 3, reps: '10–12', rest: '90s', rpe: '8', restSec: 90 },
+        { name: 'Single-Arm Cable Pushdown', note: 'Rotate palm down at lockout. Finisher — chase the pump.', sets: 3, reps: '15', rest: '60s', rpe: '7', restSec: 60 }
+      ]},
+      { label: 'D — Core', items: [
+        { name: 'Cable Crunch', note: 'Kneel, pull elbows to thighs. Round the lumbar. Best weighted core movement.', sets: 4, reps: '15–20', rest: '60s', rpe: '8', restSec: 60 },
+        { name: 'Hanging Leg Raise', note: 'Control descent. Posterior pelvic tilt at top.', sets: 3, reps: '12–15', rest: 'No rest', rpe: '8', ss: 'SS C', restSec: 0 },
+        { name: 'Ab Wheel Rollout', note: 'From knees. Full extension if possible. Superset with above.', sets: 3, reps: '10–12', rest: '60s', rpe: '8', ss: 'SS C', restSec: 60 }
+      ]}
+    ]
+  },
+  d5: {
+    tag: 'Day 05 · Saturday', title: 'ATHLETIC DAY',
+    sub: 'Conditioning · Kettlebells · Bag Work · Core<br>No heavy lifting. GPP, capacity, mental edge.',
+    blocks: [
+      { label: 'A — Conditioning (Choose 1–2)', type: 'cardio', items: [
+        { title: 'Option A — Bike Intervals', detail: '20 min total. 30s hard / 90s easy × 10 rounds. Target HR 160–170 on efforts.', achilles: 'Best Achilles-safe option. Highest caloric burn.' },
+        { title: 'Option B — Row Machine Intervals', detail: '500m hard / 2 min rest × 6 rounds. Sub-2:00/500m target. Builds lactic capacity and back endurance simultaneously.', achilles: 'Zero impact. Upper body dominant.' },
+        { title: 'Option C — Bag Work + TRX Circuit', detail: '4 rounds: 2 min bag work → TRX Rows ×15 → TRX Push-Up ×15 → Rest 90s.', achilles: 'Flat-footed stance only on bag. No explosive pivots this phase.' }
+      ]},
+      { label: 'B — Kettlebell Circuit', items: [
+        { name: 'KB Goblet Squat', note: 'Deep. Elbows inside knees. Great mobility + quad work.', sets: 3, reps: '15', rest: '60s', rpe: '7', restSec: 60 },
+        { name: 'KB Swing (Two-Hand)', note: 'Hip hinge. Explosive hip drive. NOT a squat movement.', sets: 4, reps: '20', rest: '60s', rpe: '7–8', restSec: 60 },
+        { name: 'KB Turkish Get-Up', note: 'Slow and deliberate. Best unilateral stability movement.', sets: 3, reps: '3 / side', rest: '90s', rpe: '7', restSec: 90 }
+      ]},
+      { label: 'C — Core Finisher', items: [
+        { name: 'Plank Variations', note: 'Standard → Side Plank L → Side Plank R. 45s each.', sets: 3, reps: '45s each', rest: '60s', rpe: '7', restSec: 60 },
+        { name: 'Pallof Press (Cable)', note: 'Anti-rotation. Core stability under load. Both sides.', sets: 3, reps: '12 / side', rest: '60s', rpe: '7', restSec: 60 },
+        { name: 'Dead Bug', note: 'Press lower back INTO floor the entire time. Slow and controlled.', sets: 3, reps: '10 / side', rest: '60s', rpe: '6', restSec: 60 }
+      ]}
+    ]
   }
-  function toggleP(header) { header.parentElement.classList.toggle('open'); }
-</script>
+};
 
+// ===== STORAGE =====
+const DB_KEY = 'ironprotocol_v2';
+function loadDB() { try { return JSON.parse(localStorage.getItem(DB_KEY)) || {}; } catch(e) { return {}; } }
+function saveDB(db) { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+function todayKey() { return new Date().toISOString().slice(0,10); }
+function weekStart() { const d = new Date(); d.setDate(d.getDate() - d.getDay()); return d.toISOString().slice(0,10); }
+
+function getSessionData(day, exName) {
+  const db = loadDB();
+  const key = todayKey();
+  return (db.sessions && db.sessions[key] && db.sessions[key][day] && db.sessions[key][day][exName]) || null;
+}
+function saveSetData(day, exName, setIdx, weight, reps, done) {
+  const db = loadDB();
+  const key = todayKey();
+  if (!db.sessions) db.sessions = {};
+  if (!db.sessions[key]) db.sessions[key] = {};
+  if (!db.sessions[key][day]) db.sessions[key][day] = {};
+  if (!db.sessions[key][day][exName]) db.sessions[key][day][exName] = [];
+  db.sessions[key][day][exName][setIdx] = { weight, reps, done };
+  saveDB(db);
+}
+
+function getLastSession(day, exName) {
+  const db = loadDB();
+  if (!db.sessions) return null;
+  const today = todayKey();
+  const dates = Object.keys(db.sessions).filter(d => d < today && db.sessions[d][day] && db.sessions[d][day][exName]).sort().reverse();
+  return dates.length ? { date: dates[0], sets: db.sessions[dates[0]][day][exName] } : null;
+}
+
+function getWeeklyStats() {
+  const db = loadDB();
+  if (!db.sessions) return { sets: 0, reps: 0, tonnage: 0, sessions: 0 };
+  const ws = weekStart();
+  let sets = 0, reps = 0, tonnage = 0, sessionDays = new Set();
+  Object.entries(db.sessions).forEach(([date, days]) => {
+    if (date >= ws) {
+      Object.entries(days).forEach(([day, exercises]) => {
+        let hasWork = false;
+        Object.values(exercises).forEach(setArr => {
+          setArr.forEach(s => {
+            if (s && s.done) {
+              sets++;
+              const r = parseInt(s.reps) || 0;
+              const w = parseFloat(s.weight) || 0;
+              reps += r;
+              tonnage += r * w;
+              hasWork = true;
+            }
+          });
+        });
+        if (hasWork) sessionDays.add(date);
+      });
+    }
+  });
+  return { sets, reps, tonnage: Math.round(tonnage), sessions: sessionDays.size };
+}
+
+// ===== BODYWEIGHT =====
+function saveBW(weight) {
+  const db = loadDB();
+  if (!db.bodyweight) db.bodyweight = [];
+  db.bodyweight.push({ date: todayKey(), weight: parseFloat(weight) });
+  saveDB(db);
+}
+function getBWData() { const db = loadDB(); return (db.bodyweight || []).slice(-30); }
+
+// ===== SESSION TIMER =====
+let sessionStart = null, sessionInterval = null, sessionActive = false;
+function toggleSession() {
+  if (!sessionActive) {
+    sessionActive = true; sessionStart = Date.now();
+    document.getElementById('sessionBar').classList.add('active');
+    document.getElementById('scrollArea').classList.add('with-timer');
+    document.getElementById('sessionToggle').textContent = 'Pause';
+    sessionInterval = setInterval(updateSessionTimer, 1000);
+  } else {
+    sessionActive = false;
+    document.getElementById('sessionToggle').textContent = 'Resume';
+    clearInterval(sessionInterval);
+  }
+}
+function endSession() {
+  const elapsed = sessionStart ? Math.floor((Date.now() - sessionStart)/1000) : 0;
+  sessionActive = false; sessionStart = null;
+  clearInterval(sessionInterval);
+  document.getElementById('sessionBar').classList.remove('active');
+  document.getElementById('scrollArea').classList.remove('with-timer');
+  document.getElementById('sessionTimerText').textContent = 'SESSION 00:00';
+  document.getElementById('sessionToggle').textContent = 'Start';
+  // Save session duration
+  const db = loadDB();
+  if (!db.sessionTimes) db.sessionTimes = [];
+  db.sessionTimes.push({ date: todayKey(), duration: elapsed });
+  saveDB(db);
+  updateWeeklySummary();
+}
+function updateSessionTimer() {
+  if (!sessionStart) return;
+  const s = Math.floor((Date.now() - sessionStart)/1000);
+  const m = Math.floor(s/60), sec = s%60;
+  document.getElementById('sessionTimerText').textContent = `SESSION ${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+
+// ===== REST TIMER =====
+let restInterval = null, restRemaining = 0;
+function startRest(seconds, exName) {
+  if (seconds <= 0) return;
+  restRemaining = seconds;
+  document.getElementById('restExName').textContent = 'Next: ' + exName;
+  document.getElementById('restOverlay').classList.add('active');
+  updateRestDisplay();
+  restInterval = setInterval(() => {
+    restRemaining--;
+    if (restRemaining <= 0) { skipRest(); return; }
+    updateRestDisplay();
+  }, 1000);
+}
+function updateRestDisplay() {
+  const m = Math.floor(restRemaining/60), s = restRemaining%60;
+  document.getElementById('restTime').textContent = m > 0 ? `${m}:${String(s).padStart(2,'0')}` : `0:${String(s).padStart(2,'0')}`;
+}
+function skipRest() {
+  clearInterval(restInterval);
+  document.getElementById('restOverlay').classList.remove('active');
+  // vibrate if available
+  if (navigator.vibrate) navigator.vibrate(200);
+}
+
+// ===== RENDER =====
+function renderDay(dayId) {
+  const day = DAYS[dayId];
+  const page = document.getElementById('p-' + dayId);
+  let html = `<div class="day-hero"><div class="day-hero-tag">${day.tag}</div><div class="day-hero-title">${day.title}</div><div class="day-hero-sub">${day.sub}</div></div>`;
+  if (day.warning) html += `<div class="warning-card">${day.warning}</div>`;
+
+  day.blocks.forEach(block => {
+    html += `<div class="block-label">${block.label}</div>`;
+    if (block.type === 'cardio') {
+      block.items.forEach(c => {
+        html += `<div class="cardio-card"><div class="cardio-title">${c.title}</div><div class="cardio-detail">${c.detail}</div>`;
+        if (c.achilles) html += `<div class="achilles-note">⚡ ${c.achilles}</div>`;
+        html += `</div>`;
+      });
+    } else {
+      block.items.forEach(ex => {
+        const last = getLastSession(dayId, ex.name);
+        const today = getSessionData(dayId, ex.name);
+        const allDone = today && today.length >= ex.sets && today.every(s => s && s.done);
+
+        html += `<div class="ex-card${allDone ? ' all-done' : ''}">`;
+        html += `<div class="ex-card-top"><div class="ex-left">`;
+        html += `<div class="ex-name">${ex.name}${ex.ss ? `<span class="ss-badge">${ex.ss}</span>` : ''}</div>`;
+        html += `<div class="ex-note">${ex.note}</div>`;
+        if (last) {
+          const lastSets = last.sets.filter(s => s && s.done);
+          if (lastSets.length) {
+            const weights = lastSets.map(s => s.weight).filter(Boolean);
+            const maxW = weights.length ? Math.max(...weights) : null;
+            html += `<div class="ex-last-session">Last (${last.date}): ${maxW ? maxW + ' lbs' : ''} × ${lastSets.length} sets</div>`;
+          }
+        }
+        html += `</div><div class="ex-badges"><div class="ex-badge sets">${ex.sets} sets</div><div class="ex-badge reps">${ex.reps} reps</div></div></div>`;
+
+        html += `<div class="ex-meta-strip">`;
+        html += `<div><div class="ex-meta-label">Rest</div><div class="ex-meta-value">${ex.rest}</div></div>`;
+        html += `<div><div class="ex-meta-label">RPE</div><div class="ex-meta-value">${ex.rpe}</div></div>`;
+        if (ex.tempo) html += `<div><div class="ex-meta-label">Tempo</div><div class="ex-meta-value">${ex.tempo}</div></div>`;
+        html += `</div>`;
+
+        // Set logging
+        html += `<div class="set-log-area">`;
+        for (let i = 0; i < ex.sets; i++) {
+          const sd = today && today[i] ? today[i] : { weight: '', reps: '', done: false };
+          const lastWeight = last && last.sets[i] && last.sets[i].weight ? last.sets[i].weight : '';
+          html += `<div class="set-row">`;
+          html += `<span class="set-num">Set ${i+1}</span>`;
+          html += `<input class="set-input" type="number" inputmode="decimal" placeholder="${lastWeight || 'lbs'}" value="${sd.weight || ''}" onchange="logSet('${dayId}','${ex.name.replace(/'/g,"\\'")}',${i},this)" data-field="weight">`;
+          html += `<span class="set-x">×</span>`;
+          html += `<input class="set-input" type="number" inputmode="numeric" placeholder="${ex.reps}" value="${sd.reps || ''}" onchange="logSet('${dayId}','${ex.name.replace(/'/g,"\\'")}',${i},this)" data-field="reps">`;
+          html += `<button class="set-check ${sd.done ? 'done' : ''}" onclick="completeSet('${dayId}','${ex.name.replace(/'/g,"\\'")}',${i},this,${ex.restSec})">✓</button>`;
+          html += `</div>`;
+        }
+        html += `</div>`;
+        html += `</div>`;
+      });
+    }
+  });
+  page.innerHTML = html;
+}
+
+function logSet(day, exName, idx, input) {
+  const row = input.closest('.set-row');
+  const wInput = row.querySelector('[data-field="weight"]');
+  const rInput = row.querySelector('[data-field="reps"]');
+  const existing = getSessionData(day, exName);
+  const done = existing && existing[idx] ? existing[idx].done : false;
+  saveSetData(day, exName, idx, wInput.value, rInput.value, done);
+}
+
+function completeSet(day, exName, idx, btn, restSec) {
+  const row = btn.closest('.set-row');
+  const wInput = row.querySelector('[data-field="weight"]');
+  const rInput = row.querySelector('[data-field="reps"]');
+  const wasDone = btn.classList.contains('done');
+  const nowDone = !wasDone;
+  btn.classList.toggle('done');
+  saveSetData(day, exName, idx, wInput.value, rInput.value, nowDone);
+
+  // Auto-start session on first set completion
+  if (nowDone && !sessionStart) { toggleSession(); }
+
+  // Check if card is all done
+  const card = btn.closest('.ex-card');
+  const allChecks = card.querySelectorAll('.set-check');
+  const allDone = Array.from(allChecks).every(c => c.classList.contains('done'));
+  card.classList.toggle('all-done', allDone);
+
+  // Start rest timer
+  if (nowDone && restSec > 0) { startRest(restSec, exName); }
+
+  updateWeeklySummary();
+}
+
+function renderPrinciples() {
+  const page = document.getElementById('p-ref');
+  let html = `<div class="day-hero"><div class="day-hero-tag">Reference</div><div class="day-hero-title">PRINCIPLES</div><div class="day-hero-sub">Nutrition · Progression · TRT · Recovery · Supplements</div></div>`;
+  html += `<div class="warning-card"><strong>Not medical advice.</strong> TRT notes are programming context only. All hormone adjustments must be cleared by your physician.</div>`;
+
+  // Bodyweight log
+  html += `<div class="block-label">Bodyweight Log</div>`;
+  html += `<div class="bw-log-section">`;
+  html += `<div class="bw-input-row"><input class="bw-input" type="number" inputmode="decimal" placeholder="Enter weight (lbs)" id="bwInput"><button class="bw-btn" onclick="logBodyweight()">Log</button></div>`;
+  html += `<canvas id="bwChart" class="bw-chart" height="120"></canvas>`;
+  html += `<div class="bw-entries" id="bwEntries"></div>`;
+  html += `</div>`;
+
+  const principles = [
+    { title: 'Weekly Schedule', open: true, list: ['Monday — Push (Chest / Shoulders / Tris)','Tuesday — Pull (Back / Bis)','Wednesday — Rest or light walk','Thursday — Legs','Friday — Upper Power (Arms / Shoulders / Core)','Saturday — Athletic / Conditioning','Sunday — Full rest. Sleep and food.'] },
+    { title: 'Nutrition Strategy', text: 'Eating intuitively works if you anchor it to one rule: protein first, every meal.', list: ['Target 235–250g protein daily (1g+ per lb bodyweight)','Caloric target: 3,200–3,600 kcal/day lean bulk','Carbs around training sessions — pre and post window','Don\'t fear fats — testosterone production depends on them','Minimum 1 gallon water/day on training days'] },
+    { title: 'Progression Model', text: 'Double progression: every exercise tracks both reps and load.', list: ['Hit top of rep range → add weight next session','Can\'t hit bottom of range → reduce weight 5–10%','Compounds: aim +5 lbs/week minimum','Isolation: progress every 1–2 weeks','Deload every 6th week: drop volume 40%, keep intensity','Log every session. Memory is not a training log.'] },
+    { title: 'TRT & Hormone Context', text: 'At 100–150mg/wk you\'re in the upper physiological range. Recovery and protein synthesis are already enhanced above natural baseline.', list: ['Current dose: sufficient for serious lean mass gains','Dose increase: only if stalled after 8+ weeks of consistent training + diet','Labs before any increase: Total T, Free T, E2, Hematocrit, PSA','Higher doses increase E2 — discuss AI management with physician','Sleep is the primary anabolic driver on TRT — protect it'] },
+    { title: 'Achilles Management', list: ['Avoid: box jumps, sprint accelerations, heavy calf raises','Safe: bike, rower, controlled squats, leg press, hip thrust','Any sharp tendon pain = stop that movement immediately','Eccentric heel drops daily: 3×15 off a step at 50% intensity','Target full clearance by week 8 — reassess running then'] },
+    { title: 'Recovery Protocol', list: ['Sleep minimum 7.5 hrs — non-negotiable on TRT','Active recovery: walking, stretching, sauna if available','Post-session: 40–50g protein within 60 min','Magnesium glycinate 400mg before bed','Omega-3 3g EPA/DHA — joint health and Achilles recovery'] }
+  ];
+
+  principles.forEach(p => {
+    html += `<div class="principle-card${p.open ? ' open' : ''}"><div class="principle-card-header" onclick="toggleP(this)"><div class="principle-card-title">${p.title}</div><div class="principle-chevron">▼</div></div><div class="principle-body">`;
+    if (p.text) html += `<p>${p.text}</p>`;
+    html += `<ul class="principle-list">${p.list.map(l => `<li>${l}</li>`).join('')}</ul></div></div>`;
+  });
+
+  html += `<div class="block-label">Supplement Stack</div>`;
+  html += `<table class="data-table"><thead><tr><th>Supplement</th><th>Dose</th><th>Timing</th></tr></thead><tbody>`;
+  [['Creatine Monohydrate','5g','Daily'],['Whey Protein','As needed','Post-session'],['Magnesium Glycinate','400mg','Before bed'],['Vitamin D3 + K2','5,000 IU','With meal'],['Omega-3 Fish Oil','3g EPA/DHA','With meals'],['Caffeine (optional)','150–200mg','Pre-session']].forEach(r => {
+    html += `<tr><td>${r[0]}</td><td class="gold">${r[1]}</td><td>${r[2]}</td></tr>`;
+  });
+  html += `</tbody></table>`;
+
+  html += `<div class="block-label">12-Week Targets</div>`;
+  html += `<table class="data-table"><thead><tr><th>Lift</th><th>Week 6</th><th>Week 12</th></tr></thead><tbody>`;
+  [['Flat Bench','+15–20 lbs','+30–40 lbs'],['Barbell Row','+15 lbs','+30 lbs'],['Back Squat','+20 lbs','+35–45 lbs'],['Romanian DL','+15 lbs','+30 lbs'],['DB OHP','+5–10 lbs','+10–20 lbs'],['Bodyweight','235–238 lbs','238–242 lbs']].forEach(r => {
+    html += `<tr><td>${r[0]}</td><td>${r[1]}</td><td class="gold">${r[2]}</td></tr>`;
+  });
+  html += `</tbody></table>`;
+  page.innerHTML = html;
+  renderBWChart();
+  renderBWEntries();
+}
+
+function logBodyweight() {
+  const input = document.getElementById('bwInput');
+  const val = parseFloat(input.value);
+  if (!val || val < 50 || val > 500) return;
+  saveBW(val);
+  input.value = '';
+  renderBWChart();
+  renderBWEntries();
+}
+
+function renderBWChart() {
+  const canvas = document.getElementById('bwChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const data = getBWData();
+  const w = canvas.offsetWidth, h = canvas.offsetHeight;
+  canvas.width = w * 2; canvas.height = h * 2;
+  ctx.scale(2, 2);
+  ctx.clearRect(0, 0, w, h);
+  if (data.length < 2) {
+    ctx.fillStyle = '#777'; ctx.font = '11px DM Mono'; ctx.textAlign = 'center';
+    ctx.fillText(data.length === 0 ? 'Log your weight to see trends' : 'Need 2+ entries for chart', w/2, h/2);
+    return;
+  }
+  const weights = data.map(d => d.weight);
+  const min = Math.min(...weights) - 2, max = Math.max(...weights) + 2;
+  const pad = { t: 15, b: 20, l: 40, r: 10 };
+  const cw = w - pad.l - pad.r, ch = h - pad.t - pad.b;
+
+  // Grid
+  ctx.strokeStyle = '#2a2a2a'; ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + (ch / 4) * i;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(w - pad.r, y); ctx.stroke();
+    ctx.fillStyle = '#777'; ctx.font = '9px DM Mono'; ctx.textAlign = 'right';
+    ctx.fillText(Math.round(max - (max - min) * i / 4), pad.l - 5, y + 3);
+  }
+
+  // Line
+  ctx.strokeStyle = '#c9a84c'; ctx.lineWidth = 2; ctx.beginPath();
+  data.forEach((d, i) => {
+    const x = pad.l + (cw / (data.length - 1)) * i;
+    const y = pad.t + ch - ((d.weight - min) / (max - min)) * ch;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  // Dots
+  data.forEach((d, i) => {
+    const x = pad.l + (cw / (data.length - 1)) * i;
+    const y = pad.t + ch - ((d.weight - min) / (max - min)) * ch;
+    ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2);
+    ctx.fillStyle = '#c9a84c'; ctx.fill();
+  });
+}
+
+function renderBWEntries() {
+  const el = document.getElementById('bwEntries');
+  if (!el) return;
+  const data = getBWData().reverse().slice(0, 10);
+  el.innerHTML = data.map(d => `<div class="bw-entry"><span class="bw-entry-date">${d.date}</span><span class="bw-entry-weight">${d.weight} lbs</span></div>`).join('');
+}
+
+function updateWeeklySummary() {
+  const stats = getWeeklyStats();
+  document.getElementById('wkSets').textContent = stats.sets;
+  document.getElementById('wkReps').textContent = stats.reps.toLocaleString();
+  document.getElementById('wkTonnage').textContent = stats.tonnage.toLocaleString();
+  document.getElementById('wkSessions').textContent = stats.sessions;
+}
+
+// ===== NAV =====
+let currentPage = 'd1';
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('p-' + id).classList.add('active');
+  btn.classList.add('active');
+  document.querySelector('.scroll-area').scrollTop = 0;
+  currentPage = id;
+  // Show weekly summary on day pages only
+  document.getElementById('weeklySummary').style.display = id !== 'ref' ? 'block' : 'none';
+}
+function toggleP(header) { header.parentElement.classList.toggle('open'); }
+
+// ===== INIT =====
+Object.keys(DAYS).forEach(d => renderDay(d));
+renderPrinciples();
+updateWeeklySummary();
+document.getElementById('weeklySummary').style.display = 'block';
+document.getElementById('sessionBar').classList.add('active');
+
+// ===== PWA =====
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
 </body>
 </html>
