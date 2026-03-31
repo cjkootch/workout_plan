@@ -624,6 +624,51 @@ function skipRest() {
   if (navigator.vibrate) navigator.vibrate(200);
 }
 
+// ===== EXERCISE VIDEOS =====
+const EXERCISE_VIDEOS = {
+  // Day 1 — Push
+  'Flat Bench Press':              { id: 'hWbUlkb5Ms4', title: 'Bench Press — Perfect Technique' },
+  'Incline DB Press':              { id: '8fXfwG4ftaQ', title: 'Incline DB Press — Perfect Form' },
+  'Cable Fly':                     { id: 'I-Ue34qLxc4', title: 'Cable Chest Fly — Perfect Form' },
+  'Overhead Press':                { id: '4LBVP2Oe7fg', title: 'Barbell Overhead Press — Perfect Form' },
+  'Lateral Raise':                 { id: 'Kl3LEzQ5Zqs', title: 'Lateral Raise — Perfect Form' },
+  'Tricep Pushdown':               { id: '-zLyUAo1gMw', title: 'Cable Tricep Pushdown — 2 Min Tutorial' },
+  'Overhead Tricep Extension':     { id: 'b_r_LW4HEcM', title: 'Overhead DB Tricep Extension — Perfect Form' },
+  'Face Pull':                     { id: 'qEyoBOpvqR4', title: 'Cable Face Pulls — Correct Form' },
+  // Day 2 — Pull
+  'Barbell Row':                   { id: 'phVtqawIgbk', title: 'Barbell Row — Perfect Form' },
+  'Weighted Pull-Ups':             { id: 'OEXosPwzFdc', title: 'Pull-Up — Perfect Form' },
+  'Seated Cable Row':              { id: 'qD1WZ5pSuvk', title: 'Seated Cable Row — Form Tips' },
+  'Lat Pulldown':                  { id: 'bNmvKpJSWKM', title: 'Lat Pulldown — Perfect Form' },
+  'DB Curl':                       { id: 'XE_pHwbst04', title: 'Dumbbell Bicep Curl — Form & Technique' },
+  'Hammer Curl':                   { id: 'BRVDS6HVR9Q', title: 'Hammer Curls — Exercise Tutorial' },
+  // Day 3 — Legs
+  'Back Squat':                    { id: 'iZTxa8NJH2g', title: 'Barbell Squat — Perfect Form' },
+  'Romanian Deadlift':             { id: '5rIqP63yWFg', title: 'RDL — 3 Simple Steps' },
+  'Leg Press':                     { id: 'nDh_BlnLCGc', title: 'Leg Press — Perfect Technique' },
+  'Leg Curl':                      { id: '_lgE0gPvbik', title: 'Leg Curl — Form Tips' },
+  'Hip Thrust':                    { id: 'pF17m_CXfL0', title: 'Hip Thrust — Proper Form & Technique' },
+  // Day 4 — Upper Power
+  'Weighted Dips':                 { id: 'SXBksC78v8M', title: 'Dips — Best Technique' },
+  'Close-Grip Bench':              { id: 'vEUyEOVn3yM', title: 'Close-Grip Bench Press — 3 Mistakes to Avoid' },
+  'EZ-Bar Curl':                   { id: '5NsFLGUf0Fo', title: 'EZ Bar Curl — Perfect Form' },
+  'DB Preacher Curl':              { id: 'fgYBENCgIME', title: 'Preacher Curl — Correct Form' },
+};
+
+function showVideo(name) {
+  const v = EXERCISE_VIDEOS[name];
+  if (!v) return;
+  document.getElementById('videoModalTitle').textContent = v.title;
+  document.getElementById('videoFrame').src = `https://www.youtube-nocookie.com/embed/${v.id}?autoplay=1&rel=0`;
+  document.getElementById('videoModal').classList.add('active');
+}
+
+function closeVideo(e) {
+  if (e && e.target !== document.getElementById('videoModal') && !e.target.classList.contains('video-modal-close')) return;
+  document.getElementById('videoModal').classList.remove('active');
+  document.getElementById('videoFrame').src = '';
+}
+
 // ===== RENDER =====
 function renderDay(dayId) {
   const day = DAYS[dayId];
@@ -1276,51 +1321,6 @@ loadPhase(); // sync phase from Neon on startup
 // ===== PWA =====
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
-}
-
-// ===== EXERCISE VIDEOS =====
-const EXERCISE_VIDEOS = {
-  // Day 1 — Push
-  'Flat Bench Press':              { id: 'hWbUlkb5Ms4', title: 'Bench Press — Perfect Technique' },
-  'Incline DB Press':              { id: '8fXfwG4ftaQ', title: 'Incline DB Press — Perfect Form' },
-  'Cable Fly':                     { id: 'I-Ue34qLxc4', title: 'Cable Chest Fly — Perfect Form' },
-  'Overhead Press':                { id: '4LBVP2Oe7fg', title: 'Barbell Overhead Press — Perfect Form' },
-  'Lateral Raise':                 { id: 'Kl3LEzQ5Zqs', title: 'Lateral Raise — Perfect Form' },
-  'Tricep Pushdown':               { id: '-zLyUAo1gMw', title: 'Cable Tricep Pushdown — 2 Min Tutorial' },
-  'Overhead Tricep Extension':     { id: 'b_r_LW4HEcM', title: 'Overhead DB Tricep Extension — Perfect Form' },
-  'Face Pull':                     { id: 'qEyoBOpvqR4', title: 'Cable Face Pulls — Correct Form' },
-  // Day 2 — Pull
-  'Barbell Row':                   { id: 'phVtqawIgbk', title: 'Barbell Row — Perfect Form' },
-  'Weighted Pull-Ups':             { id: 'OEXosPwzFdc', title: 'Pull-Up — Perfect Form' },
-  'Seated Cable Row':              { id: 'qD1WZ5pSuvk', title: 'Seated Cable Row — Form Tips' },
-  'Lat Pulldown':                  { id: 'bNmvKpJSWKM', title: 'Lat Pulldown — Perfect Form' },
-  'DB Curl':                       { id: 'XE_pHwbst04', title: 'Dumbbell Bicep Curl — Form & Technique' },
-  'Hammer Curl':                   { id: 'BRVDS6HVR9Q', title: 'Hammer Curls — Exercise Tutorial' },
-  // Day 3 — Legs
-  'Back Squat':                    { id: 'iZTxa8NJH2g', title: 'Barbell Squat — Perfect Form' },
-  'Romanian Deadlift':             { id: '5rIqP63yWFg', title: 'RDL — 3 Simple Steps' },
-  'Leg Press':                     { id: 'nDh_BlnLCGc', title: 'Leg Press — Perfect Technique' },
-  'Leg Curl':                      { id: '_lgE0gPvbik', title: 'Leg Curl — Form Tips' },
-  'Hip Thrust':                    { id: 'pF17m_CXfL0', title: 'Hip Thrust — Proper Form & Technique' },
-  // Day 4 — Upper Power
-  'Weighted Dips':                 { id: 'SXBksC78v8M', title: 'Dips — Best Technique' },
-  'Close-Grip Bench':              { id: 'vEUyEOVn3yM', title: 'Close-Grip Bench Press — 3 Mistakes to Avoid' },
-  'EZ-Bar Curl':                   { id: '5NsFLGUf0Fo', title: 'EZ Bar Curl — Perfect Form' },
-  'DB Preacher Curl':              { id: 'fgYBENCgIME', title: 'Preacher Curl — Correct Form' },
-};
-
-function showVideo(name) {
-  const v = EXERCISE_VIDEOS[name];
-  if (!v) return;
-  document.getElementById('videoModalTitle').textContent = v.title;
-  document.getElementById('videoFrame').src = `https://www.youtube-nocookie.com/embed/${v.id}?autoplay=1&rel=0`;
-  document.getElementById('videoModal').classList.add('active');
-}
-
-function closeVideo(e) {
-  if (e && e.target !== document.getElementById('videoModal') && !e.target.classList.contains('video-modal-close')) return;
-  document.getElementById('videoModal').classList.remove('active');
-  document.getElementById('videoFrame').src = '';
 }
 
 // ===== PHASE =====
