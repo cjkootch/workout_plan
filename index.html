@@ -257,6 +257,32 @@
   .chat-send:disabled { opacity:0.45; cursor:default; }
   .chat-cursor { display:inline-block; width:2px; height:0.9em; background:var(--gold); margin-left:1px; vertical-align:middle; border-radius:1px; animation:blink 0.7s step-end infinite; }
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  /* SMART PRE-FILL */
+  .set-input[data-prefilled="true"] { color:var(--muted); }
+  .set-input[data-prefilled="true"]:focus { color:var(--text); }
+
+  /* BRIEF CARD */
+  .brief-card { background:var(--surface); border:1px solid var(--gold-border); border-radius:12px; margin:0 1.1rem 1rem; overflow:hidden; }
+  .brief-card-header { display:flex; align-items:center; justify-content:space-between; padding:0.65rem 0.85rem; cursor:pointer; user-select:none; }
+  .brief-card-label { font-size:0.68rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--gold); font-weight:500; display:flex; align-items:center; gap:0.35rem; }
+  .brief-chevron { font-size:0.7rem; color:var(--gold); transition:transform 0.2s; }
+  .brief-card.collapsed .brief-chevron { transform:rotate(-90deg); }
+  .brief-card-body { padding:0 0.85rem 0.85rem; font-size:0.8rem; line-height:1.75; color:var(--text); }
+  .brief-card.collapsed .brief-card-body { display:none; }
+  .brief-loading { color:var(--muted); font-style:italic; font-size:0.78rem; }
+
+  /* DEBRIEF MODAL */
+  .debrief-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.82); z-index:300; align-items:center; justify-content:center; padding:1rem; }
+  .debrief-modal.active { display:flex; }
+  .debrief-inner { width:100%; max-width:480px; background:var(--surface); border-radius:16px; overflow:hidden; max-height:88vh; display:flex; flex-direction:column; }
+  .debrief-header { background:var(--gold); padding:0.9rem 1.1rem; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+  .debrief-title { font-family:'Bebas Neue',sans-serif; font-size:1.25rem; letter-spacing:0.1em; color:#fff; }
+  .debrief-close { background:none; border:none; color:#fff; font-size:1.2rem; cursor:pointer; width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:50%; }
+  .debrief-body { padding:1rem 1.1rem; overflow-y:auto; font-size:0.84rem; line-height:1.75; flex:1; }
+  .debrief-trigger { width:100%; background:var(--gold-bg); border:1.5px solid var(--gold-border); color:var(--gold); font-family:inherit; font-size:0.75rem; letter-spacing:0.08em; text-transform:uppercase; border-radius:10px; padding:0.7rem; cursor:pointer; margin-top:0.6rem; font-weight:500; display:flex; align-items:center; justify-content:center; gap:0.4rem; }
+  .debrief-trigger:active { background:rgba(139,105,20,0.14); }
+  .debrief-trigger:disabled { opacity:0.45; cursor:default; }
 </style>
 </head>
 <body>
@@ -291,6 +317,16 @@
     <button class="video-modal-close" onclick="closeVideo()">✕</button>
     <div class="video-modal-title" id="videoModalTitle"></div>
     <iframe id="videoFrame" allowfullscreen allow="autoplay"></iframe>
+  </div>
+</div>
+
+<div class="debrief-modal" id="debriefModal" onclick="if(event.target===this)closeDebrief()">
+  <div class="debrief-inner">
+    <div class="debrief-header">
+      <div class="debrief-title">Session Debrief</div>
+      <button class="debrief-close" onclick="closeDebrief()">✕</button>
+    </div>
+    <div class="debrief-body" id="debriefBody"></div>
   </div>
 </div>
 
@@ -697,6 +733,17 @@ function renderDay(dayId) {
   let html = `<div class="day-hero"><div class="day-hero-tag">${day.tag}</div><div class="day-hero-title">${day.title}</div><div class="day-hero-sub">${day.sub}</div></div>`;
   if (day.warning) html += `<div class="warning-card">${day.warning}</div>`;
 
+  // Pre-workout brief card (content filled async)
+  html += `<div class="brief-card" id="brief-${dayId}">
+    <div class="brief-card-header" onclick="toggleBrief('${dayId}')">
+      <div class="brief-card-label">🤖 Coach Brief</div>
+      <span class="brief-chevron" id="brief-chevron-${dayId}">▾</span>
+    </div>
+    <div class="brief-card-body" id="brief-body-${dayId}">
+      <div class="brief-loading">Loading brief…</div>
+    </div>
+  </div>`;
+
   day.blocks.forEach(block => {
     html += `<div class="block-label">${block.label}</div>`;
     if (block.type === 'cardio') {
@@ -745,7 +792,8 @@ function renderDay(dayId) {
           const prevHint = (prevW || prevR) ? `<span class="set-prev">${prevW || '—'}×${prevR || '—'}</span>` : '';
           html += `<div class="set-row">`;
           html += `<span class="set-num">Set ${i+1}${prevHint}</span>`;
-          html += `<input class="set-input" type="number" inputmode="decimal" placeholder="${lastWeight || 'lbs'}" value="${sd.weight || ''}" onchange="logSet('${dayId}','${ex.name.replace(/'/g,"\\'")}',${i},this)" data-field="weight">`;
+          const prefill = sd.weight || lastWeight;
+          html += `<input class="set-input" type="number" inputmode="decimal" placeholder="lbs" value="${prefill}" ${!sd.weight && lastWeight ? 'data-prefilled="true"' : ''} onchange="logSet('${dayId}','${ex.name.replace(/'/g,"\\'")}',${i},this)" data-field="weight">`;
           html += `<span class="set-x">×</span>`;
           html += `<input class="set-input" type="number" inputmode="numeric" placeholder="${ex.reps}" value="${sd.reps || ''}" onchange="logSet('${dayId}','${ex.name.replace(/'/g,"\\'")}',${i},this)" data-field="reps">`;
           html += `<button class="set-check ${sd.done ? 'done' : ''}" onclick="completeSet('${dayId}','${ex.name.replace(/'/g,"\\'")}',${i},this,${ex.restSec})">✓</button>`;
@@ -757,7 +805,7 @@ function renderDay(dayId) {
     }
   });
 
-  // Complete Workout button
+  // Complete Workout button + debrief
   const alreadyDone = isWorkoutCompleted(dayId);
   html += `<div class="complete-btn-wrap">
     <button class="complete-btn${alreadyDone ? ' done' : ''}"
@@ -765,6 +813,11 @@ function renderDay(dayId) {
             onclick="completeWorkout('${dayId}',this)"
             ${alreadyDone ? 'disabled' : ''}>
       ${alreadyDone ? '✓ Workout Logged' : 'Complete Workout'}
+    </button>
+    <button class="debrief-trigger" id="debrief-btn-${dayId}"
+            onclick="getDebrief('${dayId}',this)"
+            ${alreadyDone ? '' : 'style="display:none"'}>
+      🤖 Get AI Debrief
     </button>
   </div>`;
 
@@ -782,6 +835,8 @@ function toggleCard(topEl) {
 }
 
 function logSet(day, exName, idx, input) {
+  // Clear pre-fill flag once user edits
+  input.removeAttribute('data-prefilled');
   const row = input.closest('.set-row');
   const wInput = row.querySelector('[data-field="weight"]');
   const rInput = row.querySelector('[data-field="reps"]');
@@ -983,6 +1038,9 @@ async function completeWorkout(dayId, btn) {
 
     btn.textContent = '✓ Workout Logged';
     btn.classList.add('done');
+    // Reveal debrief button
+    const debriefBtn = document.getElementById('debrief-btn-' + dayId);
+    if (debriefBtn) debriefBtn.style.display = '';
   } catch(e) {
     btn.disabled = false;
     btn.textContent = 'Retry — Complete Workout';
@@ -1547,6 +1605,79 @@ async function sendChatMessage() {
   input.disabled   = false;
   input.focus();
   msgs.scrollTop = msgs.scrollHeight;
+}
+
+// ===== PRE-WORKOUT BRIEF =====
+const _briefCache = {};
+
+async function loadBrief(dayId) {
+  const bodyEl = document.getElementById('brief-body-' + dayId);
+  if (!bodyEl) return;
+
+  // Use cache if available
+  if (_briefCache[dayId]) {
+    bodyEl.innerHTML = _briefCache[dayId];
+    return;
+  }
+
+  try {
+    const res  = await fetch('/api/brief?day=' + dayId);
+    const data = await res.json();
+    const html = data.brief
+      ? formatChatReply(data.brief)
+      : '<span style="color:var(--muted);font-style:italic">No previous session data yet.</span>';
+    _briefCache[dayId] = html;
+    bodyEl.innerHTML   = html;
+  } catch {
+    bodyEl.innerHTML = '<span style="color:var(--muted);font-style:italic">Brief unavailable.</span>';
+  }
+}
+
+function toggleBrief(dayId) {
+  const card = document.getElementById('brief-' + dayId);
+  if (!card) return;
+  card.classList.toggle('collapsed');
+  // Lazy-load on first expand
+  if (!card.classList.contains('collapsed') && !_briefCache[dayId]) {
+    loadBrief(dayId);
+  }
+}
+
+// Auto-load briefs for all day pages on startup (slightly staggered to avoid hammering API)
+Object.keys(DAYS).forEach((d, i) => {
+  setTimeout(() => loadBrief(d), 800 + i * 600);
+});
+
+// ===== POST-WORKOUT DEBRIEF =====
+async function getDebrief(dayId, btn) {
+  btn.disabled    = true;
+  btn.textContent = '🤖 Generating debrief…';
+
+  try {
+    const res  = await fetch('/api/debrief', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ dayId }),
+    });
+    const data = await res.json();
+    const body = document.getElementById('debriefBody');
+    body.innerHTML = data.debrief
+      ? formatChatReply(data.debrief)
+      : '<span style="color:var(--muted)">Not enough data yet — log some sets first.</span>';
+    document.getElementById('debriefModal').classList.add('active');
+  } catch {
+    btn.disabled    = false;
+    btn.textContent = '🤖 Get AI Debrief';
+  }
+}
+
+function closeDebrief() {
+  document.getElementById('debriefModal').classList.remove('active');
+  // Re-enable button after closing
+  document.querySelectorAll('.debrief-trigger').forEach(b => {
+    b.disabled    = false;
+    b.innerHTML   = '🤖 Get AI Debrief';
+  });
 }
 </script>
 </body>

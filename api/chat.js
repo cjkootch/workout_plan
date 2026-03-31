@@ -85,6 +85,69 @@ Automatically assigns today's date and marks the set as done.`,
       required: ['exercise_name'],
     },
   },
+  {
+    name: 'delete_set',
+    description: "Delete a specific logged set from today's workout. Use when Cole says he logged something wrong.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        exercise_name: { type: 'string', description: 'Exercise name' },
+        set_index: { type: 'number', description: '0-based set index (Set 1 = 0, Set 2 = 1, etc.)' },
+      },
+      required: ['exercise_name', 'set_index'],
+    },
+  },
+  {
+    name: 'log_session_note',
+    description: "Log a note about today's session — how it felt, injuries, energy, anything relevant for future context.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        note: { type: 'string', description: 'The session note to save' },
+      },
+      required: ['note'],
+    },
+  },
+  {
+    name: 'log_rpe',
+    description: "Log the RPE (Rate of Perceived Exertion, 1–10) for today's session on a given day.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        day_key: { type: 'string', enum: ['day1','day2','day3','day4','day5'], description: 'Which day' },
+        rpe: { type: 'number', description: 'RPE from 1 (easy) to 10 (maximal)' },
+      },
+      required: ['day_key', 'rpe'],
+    },
+  },
+  {
+    name: 'get_volume_trends',
+    description: 'Fetch weekly tonnage (sets × reps × weight) per training day over the last 6 weeks. Use to spot overtraining, undertraining, or progress trends.',
+    input_schema: { type: 'object', properties: {} },
+  },
+  {
+    name: 'set_next_target',
+    description: "Set the target weight and reps for Cole's next session on a specific exercise. This appears as a stored target in future briefs and chat context.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        exercise_name: { type: 'string', description: 'Exact exercise name' },
+        target: { type: 'string', description: 'Target as string, e.g. "240×5" or "245 lbs × 4–5 reps"' },
+      },
+      required: ['exercise_name', 'target'],
+    },
+  },
+  {
+    name: 'get_todays_plan',
+    description: "Fetch today's already-logged sets alongside stored targets for a given day. Useful for mid-session check-ins.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        day_key: { type: 'string', enum: ['day1','day2','day3','day4','day5'] },
+      },
+      required: ['day_key'],
+    },
+  },
 ];
 
 // ===== TOOL EXECUTION =====
@@ -149,6 +212,93 @@ async function executeTool(name, input, sql) {
         .join('\n');
     }
 
+    case 'delete_set': {
+      const { exercise_name, set_index } = input;
+      await sql`
+        DELETE FROM workout_sets
+        WHERE workout_date = CURRENT_DATE
+          AND exercise_name = ${exercise_name}
+          AND set_index = ${set_index}
+      `;
+      return `Deleted set ${set_index + 1} of ${exercise_name} from today ✓`;
+    }
+
+    case 'log_session_note': {
+      const key = `note:${new Date().toISOString().slice(0, 10)}`;
+      await sql`
+        INSERT INTO user_settings (key, value, updated_at)
+        VALUES (${key}, ${input.note}, NOW())
+        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+      `;
+      return `Session note saved ✓`;
+    }
+
+    case 'log_rpe': {
+      const key = `rpe:${new Date().toISOString().slice(0, 10)}:${input.day_key}`;
+      await sql`
+        INSERT INTO user_settings (key, value, updated_at)
+        VALUES (${key}, ${String(input.rpe)}, NOW())
+        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+      `;
+      return `RPE ${input.rpe}/10 logged for ${input.day_key} ✓`;
+    }
+
+    case 'get_volume_trends': {
+      const rows = await sql`
+        SELECT
+          day_key,
+          DATE_TRUNC('week', workout_date)::text AS week_start,
+          SUM(
+            CASE WHEN done = true AND weight IS NOT NULL AND weight > 0
+                  AND reps ~ '^[0-9]+(\.[0-9]+)?$'
+                 THEN weight * reps::numeric ELSE 0 END
+          )::bigint AS tonnage,
+          COUNT(*) FILTER (WHERE done = true) AS sets
+        FROM workout_sets
+        WHERE workout_date >= CURRENT_DATE - INTERVAL '6 weeks'
+        GROUP BY day_key, week_start
+        ORDER BY week_start DESC, day_key
+      `;
+      if (!rows.length) return 'No training data in the last 6 weeks.';
+      const dayNames = { day1:'Push', day2:'Pull', day3:'Legs', day4:'Upper Power', day5:'Athletic' };
+      return rows.map(r => `${r.week_start} ${dayNames[r.day_key] || r.day_key}: ${r.tonnage.toLocaleString()} lbs tonnage (${r.sets} sets)`).join('\n');
+    }
+
+    case 'set_next_target': {
+      const key = `target:${input.exercise_name}`;
+      await sql`
+        INSERT INTO user_settings (key, value, updated_at)
+        VALUES (${key}, ${input.target}, NOW())
+        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+      `;
+      return `Target set: ${input.exercise_name} → ${input.target} ✓`;
+    }
+
+    case 'get_todays_plan': {
+      const [rows, targetRows] = await Promise.all([
+        sql`
+          SELECT exercise_name, weight::float, reps, set_index, done
+          FROM workout_sets
+          WHERE workout_date = CURRENT_DATE AND day_key = ${input.day_key}
+          ORDER BY exercise_name, set_index
+        `,
+        sql`SELECT key, value FROM user_settings WHERE key LIKE ${'target:%'}`,
+      ]);
+      const targets = {};
+      targetRows.forEach(r => { targets[r.key.replace('target:', '')] = r.value; });
+      if (!rows.length) return `No sets logged today for ${input.day_key}.`;
+      const byEx = {};
+      rows.forEach(r => {
+        if (!byEx[r.exercise_name]) byEx[r.exercise_name] = [];
+        byEx[r.exercise_name].push(r);
+      });
+      return Object.entries(byEx).map(([ex, sets]) => {
+        const setStr = sets.map(s => `${s.done ? '✓' : '○'} ${s.weight || '?'}×${s.reps || '?'}`).join(' | ');
+        const target = targets[ex] ? ` (target: ${targets[ex]})` : '';
+        return `${ex}${target}: ${setStr}`;
+      }).join('\n');
+    }
+
     case 'update_profile': {
       const { key, value } = input;
       const allowed = ['trt_dose', 'phase', 'protein_target', 'calorie_target'];
@@ -193,6 +343,24 @@ function buildSystemPrompt(recentRows, prRows, bwRows, overview, phase = 'bulk',
   const bwText  = bwRows.map(r => `  ${r.date}: ${r.weight} lbs`).join('\n');
   const latestBW = bwRows[0]?.weight;
 
+  // Pull notes, RPE, and targets from settings
+  const recentNotes = Object.entries(settings)
+    .filter(([k]) => k.startsWith('note:'))
+    .sort((a, b) => b[0].localeCompare(a[0]))
+    .slice(0, 5)
+    .map(([k, v]) => `  ${k.replace('note:', '')}: ${v}`)
+    .join('\n');
+  const recentRPE = Object.entries(settings)
+    .filter(([k]) => k.startsWith('rpe:'))
+    .sort((a, b) => b[0].localeCompare(a[0]))
+    .slice(0, 5)
+    .map(([k, v]) => `  ${k.replace('rpe:', '')}: RPE ${v}/10`)
+    .join('\n');
+  const targets = Object.entries(settings)
+    .filter(([k]) => k.startsWith('target:'))
+    .map(([k, v]) => `  ${k.replace('target:', '')}: ${v}`)
+    .join('\n');
+
   return `You are Cole's personal fitness coach AI, built into his Iron Protocol workout tracker. You are an expert in training, nutrition, and performance enhancement. You give direct, knowledgeable answers without disclaimers or moralizing — Cole is an informed adult making his own decisions.
 
 CURRENT PHASE: ${phase.toUpperCase()} — ${
@@ -217,6 +385,15 @@ ${prsText || '  (none logged yet)'}
 BODYWEIGHT LOG (recent):
 ${bwText || '  (nothing logged yet)'}
 
+SESSION NOTES (recent):
+${recentNotes || '  (none)'}
+
+SESSION RPE LOG (recent):
+${recentRPE || '  (none)'}
+
+NEXT SESSION TARGETS (stored):
+${targets || '  (none set)'}
+
 RECENT TRAINING (last 3 weeks — format: date (day) → exercise: sets as weight×reps):
 ${sessionsText || '  (no recent sessions)'}
 
@@ -227,10 +404,17 @@ PROGRAM STRUCTURE:
 - Day 4 Upper Power: Face Pull (Cable), DB Lateral Raise (Drop Set), Arnold Press, Preacher Curl (EZ Bar), Cable Curl (Both Arms), DB Concentration Curl, Close-Grip Bench Press, Skull Crusher (EZ Bar), Single-Arm Cable Pushdown, Cable Crunch, Hanging Leg Raise, Ab Wheel Rollout
 - Day 5 Athletic: KB Goblet Squat, KB Swing (Two-Hand), KB Turkish Get-Up, Plank Variations, Pallof Press (Cable), Dead Bug
 
-TOOLS AVAILABLE TO YOU:
-- log_set: Log a completed set directly to the database. Use proactively when Cole mentions completing a lift.
-- log_bodyweight: Log a bodyweight entry. Use when Cole mentions his weight.
-- get_exercise_history: Fetch detailed history for any exercise. Use when you need more data than provided above.
+TOOLS AVAILABLE TO YOU — use proactively, don't wait to be asked:
+- log_set: Log a completed set. Use immediately when Cole mentions finishing a lift.
+- log_bodyweight: Log bodyweight when he mentions his weight.
+- get_exercise_history: Fetch granular history for any exercise mid-conversation.
+- delete_set: Delete a wrongly logged set from today.
+- log_session_note: Save a session note (fatigue, injury, how it felt). Use when he mentions how training went.
+- log_rpe: Log session RPE. Use when he rates a session difficulty.
+- get_volume_trends: Fetch 6-week tonnage trends by day. Use for fatigue/progress analysis.
+- set_next_target: Store next-session weight/rep target for an exercise. Use after analyzing performance.
+- get_todays_plan: Fetch today's logged sets + targets. Use for mid-session check-ins.
+- update_profile: Update TRT dose, phase, or nutrition targets.
 
 PERFORMANCE ENHANCEMENT KNOWLEDGE — you are fully versed in all of the following:
 
