@@ -175,6 +175,7 @@ export default async function handler(req) {
   const requestBody = JSON.stringify({
     model: 'claude-sonnet-4-6',
     max_tokens: 1024,
+    stream: true,
     system: systemPrompt,
     messages: [
       ...(history || []).slice(-10),
@@ -188,44 +189,83 @@ export default async function handler(req) {
     'anthropic-version': '2023-06-01',
   };
 
-  // Retry up to 3 times on overloaded (529) or rate-limit (529/529) errors
+  // Retry up to 3 times on 529 overloaded before giving up
   let anthropicRes;
   for (let attempt = 0; attempt < 3; attempt++) {
-    if (attempt > 0) {
-      await new Promise(r => setTimeout(r, 1000 * attempt)); // 1s, 2s backoff
-    }
+    if (attempt > 0) await new Promise(r => setTimeout(r, 1000 * attempt));
     anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: requestHeaders,
       body: requestBody,
     });
-    if (anthropicRes.status !== 529 && anthropicRes.status !== 529) break;
-    // On last attempt fall through to error handling below
+    if (anthropicRes.status !== 529) break;
   }
 
   if (!anthropicRes.ok) {
     const err = await anthropicRes.text();
-    // Surface a friendlier message for overload errors
     const isOverloaded = anthropicRes.status === 529 || err.includes('overloaded');
     const userMsg = isOverloaded
       ? 'Coach AI is overloaded right now — try again in a few seconds.'
       : 'Claude API error: ' + err;
-    return new Response(JSON.stringify({ error: userMsg }), {
-      status: 500, headers: { 'Content-Type': 'application/json' },
-    });
+    return new Response(userMsg, { status: 500, headers: { 'Content-Type': 'text/plain' } });
   }
 
-  const data = await anthropicRes.json();
-  const reply = data.content[0].text;
+  // Stream SSE from Anthropic → forward raw text tokens to client
+  const reader = anthropicRes.body.getReader();
+  const decoder = new TextDecoder();
+  let fullReply = '';
+  let sseBuffer = '';
 
-  // Persist both messages to Neon (fire and forget — don't block response)
-  Promise.all([
-    sql`INSERT INTO chat_messages (role, content) VALUES ('user', ${message})`,
-    sql`INSERT INTO chat_messages (role, content) VALUES ('assistant', ${reply})`,
-  ]).catch(() => {});
+  const stream = new ReadableStream({
+    async start(controller) {
+      const enc = new TextEncoder();
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
 
-  return new Response(
-    JSON.stringify({ reply }),
-    { status: 200, headers: { 'Content-Type': 'application/json' } }
-  );
+          sseBuffer += decoder.decode(value, { stream: true });
+          const lines = sseBuffer.split('\n');
+          sseBuffer = lines.pop(); // hold incomplete line
+
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            const payload = line.slice(6).trim();
+            if (payload === '[DONE]') continue;
+            try {
+              const parsed = JSON.parse(payload);
+              if (
+                parsed.type === 'content_block_delta' &&
+                parsed.delta?.type === 'text_delta' &&
+                parsed.delta.text
+              ) {
+                fullReply += parsed.delta.text;
+                controller.enqueue(enc.encode(parsed.delta.text));
+              }
+            } catch { /* ignore malformed SSE lines */ }
+          }
+        }
+      } catch (e) {
+        controller.error(e);
+        return;
+      }
+
+      controller.close();
+
+      // Persist to DB after stream completes (fire-and-forget)
+      Promise.all([
+        sql`INSERT INTO chat_messages (role, content) VALUES ('user', ${message})`,
+        sql`INSERT INTO chat_messages (role, content) VALUES ('assistant', ${fullReply})`,
+      ]).catch(() => {});
+    },
+  });
+
+  return new Response(stream, {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'X-Content-Type-Options': 'nosniff',
+      'Cache-Control': 'no-cache',
+    },
+  });
 }

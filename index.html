@@ -255,6 +255,8 @@
   .chat-send { background:var(--gold); border:none; color:#fff; font-family:inherit; font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; border-radius:8px; padding:0 1.1rem; cursor:pointer; height:44px; flex-shrink:0; font-weight:500; }
   .chat-send:active { background:var(--gold-dim); }
   .chat-send:disabled { opacity:0.45; cursor:default; }
+  .chat-cursor { display:inline-block; width:2px; height:0.9em; background:var(--gold); margin-left:1px; vertical-align:middle; border-radius:1px; animation:blink 0.7s step-end infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 </style>
 </head>
 <body>
@@ -1494,19 +1496,42 @@ async function sendChatMessage() {
   chatHistory.push({ role: 'user', content: text });
 
   try {
-    const res  = await fetch('/api/chat', {
+    const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: text, history: chatHistory.slice(-10) }),
     });
-    const data = await res.json();
-    const reply = data.reply || data.error || 'Something went wrong.';
 
+    // Remove typing indicator and create the AI bubble
     document.getElementById(tid)?.remove();
+    const bid = 'bubble-' + Date.now();
     msgs.insertAdjacentHTML('beforeend',
-      `<div class="chat-msg ai"><div class="chat-bubble">${formatChatReply(reply)}</div></div>`);
-    chatHistory.push({ role: 'assistant', content: reply });
-    if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
+      `<div class="chat-msg ai"><div class="chat-bubble" id="${bid}"><span class="chat-cursor"></span></div></div>`);
+    const bubble = document.getElementById(bid);
+
+    if (!res.ok || !res.body) {
+      const errText = await res.text();
+      bubble.innerHTML = `<span style="color:var(--red)">${escapeHtml(errText) || 'Something went wrong.'}</span>`;
+    } else {
+      // Stream text tokens into the bubble
+      const reader  = res.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText  = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        fullText += decoder.decode(value, { stream: true });
+        // Render progressively — cursor stays at end while streaming
+        bubble.innerHTML = formatChatReply(fullText) + '<span class="chat-cursor"></span>';
+        msgs.scrollTop = msgs.scrollHeight;
+      }
+
+      // Final render — remove cursor, apply full formatting
+      bubble.innerHTML = formatChatReply(fullText);
+      chatHistory.push({ role: 'assistant', content: fullText });
+      if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
+    }
   } catch {
     document.getElementById(tid)?.remove();
     msgs.insertAdjacentHTML('beforeend',
